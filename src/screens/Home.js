@@ -1,31 +1,40 @@
 
-import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Button, SafeAreaView, StatusBar, TextInput } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View, Button, SafeAreaView, StatusBar, TextInput, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
 import { ProgressStep, ProgressSteps } from 'react-native-progress-steps';
-import { DropDownList, DropDownProvider, DropownProvider } from 'react-native-universal-dropdownlist'
-import { getAllRegisteredUsers } from '../api';
-import RNSearchablePicker from 'react-native-searchable-picker';
-import {Picker} from '@react-native-picker/picker';
 import ModalSelector from 'react-native-modal-selector-searchable'
+import ButtonToggleGroup from 'react-native-button-toggle-group';
+import SwipeableRating from 'react-native-swipeable-rating';
+import useState from 'react-usestateref'
 
 const HomeScreen = ({navigation}) => {
 
-const [users, setUsers] = useState([]);
-const [vehicles, setVehicle] = useState([]);
-const [selectedVehicle, setSelectedVehicle] = useState([])
-const [driver, setDriver] = useState([]);
-const [isLoading, setIsLoading] = useState(true);
-const [filteredUser, setFilteredUser] = useState(null)
-const [filteredVehicle, setFilteredVehicle] = useState(null)
+const [users, setUsers] = React.useState([]);
+const [valueToggle, setValueToggle] = React.useState();
+const [vehicles, setVehicle] = React.useState([]);
+const [selectedVehicle, setSelectedVehicle] = React.useState([])
+const [driver, setDriver] = React.useState([]);  
+const [isLoading, setIsLoading] = React.useState(true);
+const [quantityRows, setQuantityRows] = React.useState();
+const [nextValue, setNextValue] = React.useState();
+const [kmActual, setKmActual] = React.useState();
+const [groupsOptions, setGroupsOptions, groupOptionsRef] = useState();
+const [rating, setRating] = React.useState();
+
+var flag = false;
+var details;
+const [error, setError] = useState(false) // DEBO CAMBIARLO A TRUE DESPUES
+
 
 var aux = [];
+
 
 const getDropDownData = async() => {
   try{
     const response = await fetch("http://192.168.1.134:3000/users");
 
     const data = await response.json();   
-    parseObject(data);
+    setUsers(data);
   }catch(error){
       console.log(error);
   }
@@ -35,97 +44,91 @@ const getAllVehicles = async() => {
   try{
     const response = await fetch("http://192.168.1.134:3000/vehiculos");
     const data = await response.json();   
-    parseVehicleObject(data);
+    setVehicle(data);
   }catch(error){
       console.log(error);
   }
 }
 
-const getFilteredUser = async(key)=> {
+const getGroupAndOptions = async() => {
   try{
-    const response = await fetch("http://192.168.1.134:3000/users/" + new URLSearchParams({
-      id : key
+    const response = await fetch("http://192.168.1.134:3000/groups");
+    const data = await response.json();  
+    setGroupsOptions(data);
+  }catch(error){
+    console.log(error)
+  }
+  console.log(groupOptionsRef.current)
+}
+
+
+const doesAssignmentExist = async() => {
+  try{
+    const response = await fetch("http://192.168.1.134:3000/vehiculos/" + new URLSearchParams({
+      userId : driver.key,
+      vehCode : selectedVehicle.key
     }));
     const data = await response.json();   
-    setFilteredUser(data);
+    if(data[0].Cantidad == 0) flag = true; else flag = false;
+    setQuantityRows(data);
   }catch(error){
-      console.log(error);
+    console.log(error)
   }
-}
-
-const getFilteredVehicles = async(key)=> {
-  try{
-    const response = await fetch("http://192.168.1.134:3000/vehicles/" + new URLSearchParams({
-      id : key
-    }));
-
-    const data = await response.json();   
-    console.log(data);
-    setFilteredVehicle(data);
-  }catch(error){
-      console.log(error);
-  }
-}
-
-const parseObject = (data) => { 
-  data.forEach(element => {
-    aux.push({
-      label: element.NombreUsuario,
-      key: element.IdUsuario
-    })
-  });
-  setUsers(aux)
-}
-
-const parseVehicleObject = (data) => {
-  var aux2 = [];
-  data.forEach(element => {
-    aux2.push({
-      label: element.VehPlaca,
-      key: element.VehCodigoVehiculo
-    })
-  });
-  setVehicle(aux2)
 }
 
   useEffect(()=>{
+    getGroupAndOptions();
     getDropDownData();
     getAllVehicles();
-    setIsLoading(false)
+
     //console.log(users)
+
+    setIsLoading(false)
   }, [])
-
-  useState(()=> {
-    setFilteredUser(filteredUser)
-  }, [filteredUser])
-
-  useState(()=> {
-    setFilteredVehicle(filteredUser)
-  }, [filteredVehicle])
-
-  const showUserData = () => {
-    return(
-      <>
-        <Text>NOMBRE: {filteredUser.NombreUsuario}</Text>
-        <Text>SUCURSAL: {filteredUser.NombreUbicacion}</Text>
-      </>
-    )
-  }
 
 
   const handlerItem = async(option, type) => {
     if(type == "driver"){
       setDriver(option);
-      await getFilteredUser(option.key);
-      console.log(filteredUser);
     }else{
       setSelectedVehicle(option);
-      await getFilteredVehicles(option.key);
+    }
+  }
+
+  const handleStepDG = async() => {
+    await doesAssignmentExist();
+    if(!flag && driver.key && selectedVehicle.key){
+      alert("Esta asignación ya existe")
+      setError(true);
+      return
+    }
+    if (driver.key && selectedVehicle.key){
+     setError(false);
+    }
+    else{
+      alert("Asegúrate de seleccionar un vehículo y un conductor antes de proseguir")
+      setError(true);
+    } 
+  }
+
+  const handleStepEG = async()=> {
+    if(kmActual && nextValue){
+      setError(false);
+    }else{
+      setError(true)
+      if(!nextValue) return alert("El valor del próximo cambio es requerido");
+      if(!kmActual) return alert("El valor del kilometraje actual es requerido");
     }
   }
 
 
   return (
+    <KeyboardAvoidingView 
+    style = {{flex: 1}}
+    behavior = {Platform.OS === 'ios' ? 'padding' : 'height'}
+    keyboardVerticalOffset = {-50}
+>
+    {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
     <View style={styles.container}>
 
       <StatusBar barStyle="light-content"/>
@@ -142,17 +145,10 @@ const parseVehicleObject = (data) => {
         </View>
       </View>
       <View style={styles.body}>
+        <View style={{marginLeft: 20, marginRight: 20, flex: 1}}>
         <ProgressSteps>
-          <ProgressStep label="Datos Generales">
+          <ProgressStep label="DG" errors={error} /*onNext = {handleStepDG}*/ nextBtnText = "Siguiente">
               <View style={styles.picker}>
-               {/*  <Picker>
-                 {
-                    users.map(item => {
-                      return <Picker.Item label={item.label} value={item.value} />
-
-                    })
-                  }
-                </Picker> */}
               <Text style={{marginBottom: 5}}>Seleccione un conductor: </Text>
 
               <ModalSelector
@@ -160,7 +156,6 @@ const parseVehicleObject = (data) => {
                     initValue={"Selecciona un conductor"}
                     supportedOrientations={['landscape']}
                     accessible={true}
-                    
                     keyExtractor={item => item.key}
                     labelExtractor={item => item.label}
                     cancelText='Cancelar'
@@ -181,7 +176,6 @@ const parseVehicleObject = (data) => {
                     initValue={"Selecciona un vehículo"}
                     supportedOrientations={['landscape']}
                     accessible={true}
-                    
                     keyExtractor={item => item.key}
                     labelExtractor={item => item.label}
                     cancelText='Cancelar'
@@ -195,48 +189,130 @@ const parseVehicleObject = (data) => {
                         placeholder="Selecciona un vehículo"
                         value={selectedVehicle.label} />
                 </ModalSelector>
-                <Text>NOMBRE:</Text>{
-                  driver ?
-                  <Text>{driver.NombreUsuario}</Text>:<Text>Sin datos</Text>
-                }
+                <View style={styles.data}>
+                  <Text style={{textAlign: 'center', fontWeight: 'bold'}}>DATOS GENERALES</Text>
+                  <Text style={{fontWeight: 'bold', marginTop: 15}}>CONDUCTOR</Text> 
+                   {
+                    driver.key ? 
+                    <>
+
+                    <Text>NOMBRE: {driver.label}</Text>
+                    <Text>SUCURSAL: {driver.NombreUbicacion}</Text>
+                    </>: 
+                    <Text>No hay datos disponibles</Text>
+                  }
+
+                  <Text style={{fontWeight: 'bold', marginTop: 15}}>VEHÍCULO</Text> 
+                  {
+                    selectedVehicle.key ? 
+                    <>
+                    <Text>PLACA: {selectedVehicle.label}</Text>
+                    <Text>MODELO: {selectedVehicle.VehMarca} {selectedVehicle.VehModelo}</Text>
+                    <Text>AÑO: {selectedVehicle.VehAno}</Text>
+                    <Text>TIPO DE COMBUSTIBLE: {selectedVehicle.VehTipoCombustible ?? ""}</Text>
+                    <Text>KILOMETRAJE: {selectedVehicle.VehKilometraje}</Text>
+                    </>: 
+                    <Text>No hay datos disponibles</Text>
+                  }
+
+                </View>
               </View>
           </ProgressStep>
-          <ProgressStep label="Estado General">
-              <View style={{ alignItems: 'center' }}>
-                  <Text>This is the content within step 2!</Text>
+          <ProgressStep label="EG" nextBtnText="Siguiente" previousBtnText = "Anterior" /*onNext={handleStepEG}*/ errors={error}>
+              <View>
+                  <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>ESTADO GENERAL DEL VEHÍCULO</Text>
+                  <View>
+                  <Text>PRÓXIMO CAMBIO:</Text>
+                    <TextInput
+                    placeholder='Fecha de próximo cambio'
+                     value = {nextValue}
+                     onChangeText={(val)=> setNextValue(val)}
+                     style={styles.inputs}/>
+                    <Text>KILOMETRAJE ACTUAL:</Text>
+                    <TextInput
+                    placeholder='Kilometraje actual'
+                    value={kmActual}
+                    onChangeText={(val)=> setKmActual(val)}
+                    style={styles.inputs}/>
+                    <Text style={{marginBottom: 10}}>ESTADO DEL TANQUE DE COMBUSTIBLE:</Text>
+                    <ButtonToggleGroup
+                          highlightBackgroundColor={'#00BEF0'}
+                          highlightTextColor={'white'}
+                          inactiveBackgroundColor={'transparent'}
+                          inactiveTextColor={'grey'}
+                          values={['E', '1/4', '1/2', '3/4', 'F']}
+                          value={valueToggle}
+                          onSelect={val => setValueToggle(val)}
+                      />
+                    <Text style={{marginTop: 15}}>OBSERVACIONES:</Text>
+                    <TextInput multiline={true} style={styles.inputs}/>
+                  </View>
               </View>
           </ProgressStep>
-          <ProgressStep label="Interior">
+          <ProgressStep label="INT">
+              <ScrollView>
+              <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>DETALLES DEL VEHÍCULO</Text>
+                 {/*  <SwipeableRating
+                    rating={rating}
+                    size={32}
+                    gap={5}
+                    swipeable={true}
+                    onPress={setRating}
+                    maxRating={3}
+                    xOffset={30}
+                    color = "#00BEF0"
+                    emptyColor = "lightgray"
+                  /> */}
+
+                  {
+                    groupOptionsRef.current ?
+                    groupOptionsRef.current.map((item)=> {
+                      return (
+                        <ScrollView>
+                        <Text>{item.IdGrupoRecurso}</Text>
+                        {
+                          item.opciones.map((item)=> {
+                          return (<Text>{item.NombreOpcionRecurso}</Text>)
+                          })
+                        }
+                        </ScrollView>
+                      )
+                    })
+                    :
+                    <Text>No data</Text>
+                  }
+
+              </ScrollView>
+          </ProgressStep>
+          <ProgressStep label="EXT">
               <View style={{ alignItems: 'center' }}>
                   <Text>This is the content within step 3!</Text>
               </View>
           </ProgressStep>
-          <ProgressStep label="Exterior">
+        {/*   <ProgressStep label="MOT">
               <View style={{ alignItems: 'center' }}>
                   <Text>This is the content within step 3!</Text>
               </View>
-          </ProgressStep>
-          <ProgressStep label="Motor">
+          </ProgressStep> */}
+         {/*  <ProgressStep label="CAR">
               <View style={{ alignItems: 'center' }}>
                   <Text>This is the content within step 3!</Text>
               </View>
-          </ProgressStep>
-          <ProgressStep label="Carrocería">
-              <View style={{ alignItems: 'center' }}>
-                  <Text>This is the content within step 3!</Text>
-              </View>
-          </ProgressStep>
-          <ProgressStep label="Observaciones">
+          </ProgressStep> */}
+          <ProgressStep label="OBS">
               <View style={{ alignItems: 'center' }}>
                   <Text>This is the content within step 3!</Text>
               </View>
           </ProgressStep>
         </ProgressSteps>
+        </View>
       </View>
       
      </>
      }
     </View>
+    {/* </TouchableWithoutFeedback> */}
+      </KeyboardAvoidingView>
   );
 }
 
@@ -269,6 +345,24 @@ const styles = StyleSheet.create({
     margin: 15,
   },
   picker: {
-    margin: 20
+    margin:0
+  }, 
+  data: {
+    marginTop: 20,
+    borderColor: 'lightgray',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    padding: 5,
+    width: '100%',
+  },
+  buttons: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly'
+  },
+  inputs: {
+    padding: 3,
+    borderColor: 'lightgray',
+    borderWidth: 1,
+    marginVertical: 10
   }
 });
