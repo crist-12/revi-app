@@ -1,12 +1,20 @@
 
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, Button, SafeAreaView, StatusBar, TextInput, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from 'react-native';
+import {
+   StyleSheet, 
+   Text, 
+   View, 
+   StatusBar, 
+   TextInput, 
+   KeyboardAvoidingView, 
+   Platform, 
+   ScrollView, 
+   LogBox } from 'react-native';
 import { ProgressStep, ProgressSteps } from 'react-native-progress-steps';
 import ModalSelector from 'react-native-modal-selector-searchable'
 import ButtonToggleGroup from 'react-native-button-toggle-group';
-import SwipeableRating from 'react-native-swipeable-rating';
 import useState from 'react-usestateref'
-import RadioButtonGroup from "react-native-animated-radio-button-group";
+
 
 const HomeScreen = ({navigation}) => {
 
@@ -21,27 +29,22 @@ const [nextValue, setNextValue] = React.useState();
 const [kmActual, setKmActual] = React.useState();
 const [groupsOptions, setGroupsOptions, groupOptionsRef] = useState();
 const [respuestasQ, setRespuestasQ, respuestasRefQ] = useState([]);
-const [rating, setRating] = React.useState();
+const [interLength, setInterLength, interLengthRef] = useState(0)
+const [lengthArr, setLengthArr, lengthArrRef] = useState(0);
+const [a ,sA, SAR] = useState(0)
 
 
-const data = [
-  { id: 1, text: "Malo", color: "#f92642", outerStyle: {  borderColor:  "#f92642", width: 35, height: 35 }},
-  { id: 2, text: "Regular", color: "#fdc601", outerStyle: { borderColor: "#fdc601", width: 35, height: 35 }},
-  { id: 3, text: "Buena", color: "#127e40", outerStyle: { borderColor: "#127e40", width: 35, height: 35 }},
-];
+
 
 var flag = false;
-var details;
+
 const [error, setError] = useState(false) // DEBO CAMBIARLO A TRUE DESPUES
 
 
-var aux = [];
-var respuestas = [];
 
 const getDropDownData = async() => {
   try{
     const response = await fetch("http://192.168.1.134:3000/users");
-
     const data = await response.json();   
     setUsers(data);
   }catch(error){
@@ -90,7 +93,6 @@ const doesAssignmentExist = async() => {
     getAllVehicles();
 
     //console.log(users)
-
     setIsLoading(false)
   }, [])
 
@@ -129,13 +131,41 @@ const doesAssignmentExist = async() => {
     }
   }
 
+  const handleStepINT = async() => {
 
-  const handleArrayResponse = () => {
+    var tamArray = 0;
+    groupOptionsRef.current.filter(x => x.IdGrupoRecurso == "ASI_DET_INTERIOR").map(item => {
+      tamArray = item.opciones.length;
+      setInterLength(tamArray);
+    })
 
+    if(respuestasRefQ.current.length < interLengthRef.current){
+      setError(true)
+      return alert("Asegúrate de haber calificado todos los ítems antes de continuar")
+    }else{
+      setError(false)
+    }
   }
 
 
+  const handleStepEXTMTR = () => {
+    var tamArray = 0;
+    groupOptionsRef.current.filter(x => x.IdGrupoRecurso == "ASI_DET_EXTERIOR" || x.IdGrupoRecurso == "ASI_DET_MOTOR" || x.IdGrupoRecurso == "ASI_DET_INTERIOR").map(item => {
+      tamArray = item.opciones.length;
+    })
+
+    if(respuestasRefQ.current.length != tamArray){
+      setError(true)
+      return alert("Asegúrate de haber calificado todos los ítems antes de continuar")
+    }else{
+      setError(false)
+    }
+  }
+
+LogBox.ignoreAllLogs();
+
   return (
+
     <KeyboardAvoidingView 
     style = {{flex: 1}}
     behavior = {Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -262,50 +292,53 @@ const doesAssignmentExist = async() => {
                   </View>
               </View>
           </ProgressStep>
-          <ProgressStep label="INT">
+          <ProgressStep label="INT" onNext = {handleStepINT} nextBtnText="Siguiente" previousBtnText = "Anterior" errors={error}>
               <ScrollView>
               <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>DETALLES DEL VEHÍCULO</Text>
-                 {/*  <SwipeableRating
-                    rating={rating}
-                    size={32}
-                    gap={5}
-                    swipeable={true}
-                    onPress={setRating}
-                    maxRating={3}
-                    xOffset={30}
-                    color = "#00BEF0"
-                    emptyColor = "lightgray"
-                  /> */}
-
                   {
                     groupOptionsRef.current ?
                     groupOptionsRef.current.map((item, index)=> {
+
                       return (
+                        
                         <ScrollView>
                         {
-                          //console.log(item.opciones[0].NombreGrupoRecurso)
+                         // setLengthArr(index)
                         }
                         {
                           item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_INTERIOR").map((item, index)=> {
+                          
                           return (
                           <>
                           {
-                            !index ? <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}}>{item.NombreGrupoRecurso}</Text> : <></>
+                            !index ? (
+                            <>
+                            <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}} key={index}>{item.NombreGrupoRecurso}</Text> 
+                            </>
+                            ): <></>
                           }
-                          <Text>{item.NombreOpcionRecurso}</Text>
+                          <Text style={{marginTop: 15}} key={index}>{item.NombreOpcionRecurso}</Text>
+                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5}}/>
                           <ButtonToggleGroup
                           highlightBackgroundColor={'#00BEF0'}
                           highlightTextColor={'white'}
                           inactiveBackgroundColor={'transparent'}
                           inactiveTextColor={'grey'}
                           values={['MALO', 'REGULAR', 'EXCELENTE']}
-                          value = {respuestasQ[index]}
+                          value = {respuestasQ[index]?.Respuesta}
                           onSelect={val => {
+                          var obj = {
+                            IdAsignacion: 1,
+                            CodigoVehiculo: selectedVehicle.key,
+                            CodigoUsuario: driver.key,
+                            CodigoGrupoRecurso: item.IdGrupoRecurso,
+                            CodigoOpcionRecurso: item.IdOpcionRecurso,
+                            Respuesta: val
+                          }
                           var newArray = [...respuestasQ];
-                          newArray[index] = val
+                          newArray[index] = obj;
                           setRespuestasQ(newArray)
-                          console.log(respuestasRefQ)
-                         // setRespuestasQ(respuestasQ => respuestasQ.map((r, index)=> (r[index] == respuestas[index] ? respuestas[index] : r[index])))
+                          setLengthArr(newArray.length);
                           }}
                           
                           />
@@ -322,10 +355,69 @@ const doesAssignmentExist = async() => {
 
               </ScrollView>
           </ProgressStep>
-          <ProgressStep label="EXT">
-              <View style={{ alignItems: 'center' }}>
-                  <Text>This is the content within step 3!</Text>
-              </View>
+          <ProgressStep label="EXT/MTR" nextBtnText="Siguiente" previousBtnText = "Anterior" onNext={handleStepEXTMTR} errors={error}>
+          <ScrollView>
+              <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>DETALLES DEL VEHÍCULO</Text>
+                  {
+                    groupOptionsRef.current ?
+                    groupOptionsRef.current.map((item, index)=> {
+                      return (
+                        <ScrollView>
+                        {
+                          //console.log(groupOptionsRef.options[1].current.length)
+                        }
+                        {
+                          item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_EXTERIOR" || x.IdGrupoRecurso == "ASI_DET_MOTOR").map((item, index)=> {
+                          
+                          if(index!=0)  setLengthArr(respuestasRefQ.current.length)
+                          return (
+                          <>
+                          {
+                            !index ? (
+                            <>
+                            <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}} key={index}>{item.NombreGrupoRecurso}</Text> 
+                            </>
+                            ): <></>
+                          }
+                          <Text style={{marginTop: 15}} key={index}>{item.NombreOpcionRecurso} </Text>
+                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5}}/>
+                          <ButtonToggleGroup
+                          highlightBackgroundColor={'#00BEF0'}
+                          highlightTextColor={'white'}
+                          inactiveBackgroundColor={'transparent'}
+                          inactiveTextColor={'grey'}
+                          values={['MALO', 'REGULAR', 'EXCELENTE']}
+                          value = {respuestasQ[index+lengthArrRef.current]?.Respuesta}
+                          onSelect={val => {
+                          var obj = {
+                            IdAsignacion: 1,
+                            CodigoVehiculo: selectedVehicle.key,
+                            CodigoUsuario: driver.key,
+                            CodigoGrupoRecurso: item.IdGrupoRecurso,
+                            CodigoOpcionRecurso: item.IdOpcionRecurso,
+                            Respuesta: val
+                          }
+                          var newArray = [...respuestasQ];
+                          newArray[index+lengthArrRef.current] = obj;
+                          setRespuestasQ(newArray)
+  
+                          }}
+                          
+                          />
+                          </>                 
+                          )
+                          }
+                          
+                          )
+                        }
+                        </ScrollView>
+                      )
+                    })
+                    :
+                    <Text>No data</Text>
+                  }
+
+              </ScrollView>
           </ProgressStep>
         {/*   <ProgressStep label="MOT">
               <View style={{ alignItems: 'center' }}>
