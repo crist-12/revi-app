@@ -6,6 +6,7 @@ import ModalSelector from 'react-native-modal-selector-searchable'
 import ButtonToggleGroup from 'react-native-button-toggle-group';
 import SwipeableRating from 'react-native-swipeable-rating';
 import useState from 'react-usestateref'
+import RadioButtonGroup from "react-native-animated-radio-button-group";
 
 const HomeScreen = ({navigation}) => {
 
@@ -19,7 +20,15 @@ const [quantityRows, setQuantityRows] = React.useState();
 const [nextValue, setNextValue] = React.useState();
 const [kmActual, setKmActual] = React.useState();
 const [groupsOptions, setGroupsOptions, groupOptionsRef] = useState();
+const [respuestasQ, setRespuestasQ, respuestasRefQ] = useState([]);
 const [rating, setRating] = React.useState();
+
+
+const data = [
+  { id: 1, text: "Malo", color: "#f92642", outerStyle: {  borderColor:  "#f92642", width: 35, height: 35 }},
+  { id: 2, text: "Regular", color: "#fdc601", outerStyle: { borderColor: "#fdc601", width: 35, height: 35 }},
+  { id: 3, text: "Buena", color: "#127e40", outerStyle: { borderColor: "#127e40", width: 35, height: 35 }},
+];
 
 var flag = false;
 var details;
@@ -27,7 +36,7 @@ const [error, setError] = useState(false) // DEBO CAMBIARLO A TRUE DESPUES
 
 
 var aux = [];
-
+var respuestas = [];
 
 const getDropDownData = async() => {
   try{
@@ -58,7 +67,6 @@ const getGroupAndOptions = async() => {
   }catch(error){
     console.log(error)
   }
-  console.log(groupOptionsRef.current)
 }
 
 
@@ -119,6 +127,11 @@ const doesAssignmentExist = async() => {
       if(!nextValue) return alert("El valor del próximo cambio es requerido");
       if(!kmActual) return alert("El valor del kilometraje actual es requerido");
     }
+  }
+
+
+  const handleArrayResponse = () => {
+
   }
 
 
@@ -266,13 +279,38 @@ const doesAssignmentExist = async() => {
 
                   {
                     groupOptionsRef.current ?
-                    groupOptionsRef.current.map((item)=> {
+                    groupOptionsRef.current.map((item, index)=> {
                       return (
                         <ScrollView>
-                        <Text>{item.IdGrupoRecurso}</Text>
                         {
-                          item.opciones.map((item)=> {
-                          return (<Text>{item.NombreOpcionRecurso}</Text>)
+                          //console.log(item.opciones[0].NombreGrupoRecurso)
+                        }
+                        {
+                          item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_INTERIOR").map((item, index)=> {
+                          return (
+                          <>
+                          {
+                            !index ? <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}}>{item.NombreGrupoRecurso}</Text> : <></>
+                          }
+                          <Text>{item.NombreOpcionRecurso}</Text>
+                          <ButtonToggleGroup
+                          highlightBackgroundColor={'#00BEF0'}
+                          highlightTextColor={'white'}
+                          inactiveBackgroundColor={'transparent'}
+                          inactiveTextColor={'grey'}
+                          values={['MALO', 'REGULAR', 'EXCELENTE']}
+                          value = {respuestasQ[index]}
+                          onSelect={val => {
+                          var newArray = [...respuestasQ];
+                          newArray[index] = val
+                          setRespuestasQ(newArray)
+                          console.log(respuestasRefQ)
+                         // setRespuestasQ(respuestasQ => respuestasQ.map((r, index)=> (r[index] == respuestas[index] ? respuestas[index] : r[index])))
+                          }}
+                          
+                          />
+                          </>                 
+                          )
                           })
                         }
                         </ScrollView>
