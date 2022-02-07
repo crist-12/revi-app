@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import {
    StyleSheet, 
    Text, 
+   Button,
    View, 
    StatusBar, 
    TextInput, 
@@ -14,6 +15,7 @@ import { ProgressStep, ProgressSteps } from 'react-native-progress-steps';
 import ModalSelector from 'react-native-modal-selector-searchable'
 import ButtonToggleGroup from 'react-native-button-toggle-group';
 import useState from 'react-usestateref'
+import * as ImagePicker from 'expo-image-picker'
 
 
 const HomeScreen = ({navigation}) => {
@@ -28,11 +30,11 @@ const [quantityRows, setQuantityRows] = React.useState();
 const [nextValue, setNextValue] = React.useState();
 const [kmActual, setKmActual] = React.useState();
 const [groupsOptions, setGroupsOptions, groupOptionsRef] = useState();
-const [respuestasQ, setRespuestasQ, respuestasRefQ] = useState([]);
+const [respuestasQ, setRespuestasQ, respuestasRefQ] = useState([[],[],[]]);
 const [interLength, setInterLength, interLengthRef] = useState(0)
 const [lengthArr, setLengthArr, lengthArrRef] = useState(0);
-const [a ,sA, SAR] = useState(0)
-
+const [photo, setPhoto, photoRef] = useState([])
+let celda;
 
 
 
@@ -86,6 +88,18 @@ const doesAssignmentExist = async() => {
     console.log(error)
   }
 }
+
+
+useEffect(() => {
+  (async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Necesitas darle acceso a la cámara a esta aplicación.');
+      }
+    }
+  })();
+}, []);
 
   useEffect(()=>{
     getGroupAndOptions();
@@ -161,6 +175,63 @@ const doesAssignmentExist = async() => {
       setError(false)
     }
   }
+ 
+  const createFormData = (images = {}) => {
+    const data = new FormData();
+
+    data.append('images', {
+        name: images.fileName,
+        type: photo.type,
+        uri: Platform.OS === 'ios' ? photo.uri.replace('file://', '') : photo.uri
+    });
+
+    return data;
+  }
+
+  const handleChoosePhoto = () => {
+    launchImageLibrary({ noData: true }, (response) => {
+       console.log(response);
+      if (response) {
+        setPhoto(response);
+      }
+    });
+  };
+
+  const handleUploadPhoto = async() => {
+      try{
+       const response = await fetch("http://192.168.1.134:3000/saveimages", {
+          method: 'POST',
+          body: createFormData(photo)
+        });
+       console.log(response.json())
+      }catch(error){
+        console.log(error)
+      }
+  }
+
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      base64: true,
+      quality: 1,
+    });
+
+    console.log(result.base64)
+/*     if (!result.cancelled) {
+      let newArr = [...photo]
+      newArr.push(result.uri)
+      console.log(result)
+      setPhoto(newArr);
+      console.log(photoRef.current)
+    } */
+
+    if(!result.cancelled){
+      let newArr = [...photo];
+      newArr.push(result.base64)
+      setPhoto(newArr);
+    }
+  };
 
 LogBox.ignoreAllLogs();
 
@@ -292,7 +363,7 @@ LogBox.ignoreAllLogs();
                   </View>
               </View>
           </ProgressStep>
-          <ProgressStep label="INT" onNext = {handleStepINT} nextBtnText="Siguiente" previousBtnText = "Anterior" errors={error}>
+          <ProgressStep label="INT" /*onNext = {handleStepINT}*/ nextBtnText="Siguiente" previousBtnText = "Anterior" errors={error}>
               <ScrollView>
               <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>DETALLES DEL VEHÍCULO</Text>
                   {
@@ -325,7 +396,7 @@ LogBox.ignoreAllLogs();
                           inactiveBackgroundColor={'transparent'}
                           inactiveTextColor={'grey'}
                           values={['MALO', 'REGULAR', 'EXCELENTE']}
-                          value = {respuestasQ[index]?.Respuesta}
+                          value = {respuestasQ[0][index]?.Respuesta ?? ""}
                           onSelect={val => {
                           var obj = {
                             IdAsignacion: 1,
@@ -336,7 +407,7 @@ LogBox.ignoreAllLogs();
                             Respuesta: val
                           }
                           var newArray = [...respuestasQ];
-                          newArray[index] = obj;
+                          newArray[0][index] = obj;
                           setRespuestasQ(newArray)
                           setLengthArr(newArray.length);
                           }}
@@ -355,21 +426,18 @@ LogBox.ignoreAllLogs();
 
               </ScrollView>
           </ProgressStep>
-          <ProgressStep label="EXT/MTR" nextBtnText="Siguiente" previousBtnText = "Anterior" onNext={handleStepEXTMTR} errors={error}>
+          <ProgressStep label="EXT/MTR" nextBtnText="Siguiente" previousBtnText = "Anterior" /*onNext={handleStepEXTMTR}*/ errors={false}>
           <ScrollView>
               <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>DETALLES DEL VEHÍCULO</Text>
                   {
                     groupOptionsRef.current ?
-                    groupOptionsRef.current.map((item, index)=> {
+                    groupOptionsRef.current.map((item, indice)=> {
+
                       return (
                         <ScrollView>
                         {
-                          //console.log(groupOptionsRef.options[1].current.length)
-                        }
-                        {
-                          item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_EXTERIOR" || x.IdGrupoRecurso == "ASI_DET_MOTOR").map((item, index)=> {
+                          item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_EXTERIOR").map((item, index)=> {
                           
-                          if(index!=0)  setLengthArr(respuestasRefQ.current.length)
                           return (
                           <>
                           {
@@ -378,6 +446,8 @@ LogBox.ignoreAllLogs();
                             <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}} key={index}>{item.NombreGrupoRecurso}</Text> 
                             </>
                             ): <></>
+
+                            
                           }
                           <Text style={{marginTop: 15}} key={index}>{item.NombreOpcionRecurso} </Text>
                           <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5}}/>
@@ -387,7 +457,7 @@ LogBox.ignoreAllLogs();
                           inactiveBackgroundColor={'transparent'}
                           inactiveTextColor={'grey'}
                           values={['MALO', 'REGULAR', 'EXCELENTE']}
-                          value = {respuestasQ[index+lengthArrRef.current]?.Respuesta}
+                          value = {respuestasQ[1]?.[index]?.Respuesta}
                           onSelect={val => {
                           var obj = {
                             IdAsignacion: 1,
@@ -398,9 +468,69 @@ LogBox.ignoreAllLogs();
                             Respuesta: val
                           }
                           var newArray = [...respuestasQ];
-                          newArray[index+lengthArrRef.current] = obj;
+                          
+                          newArray[1][index] = obj;
                           setRespuestasQ(newArray)
-  
+                          console.log(respuestasRefQ.current)
+                          }}
+                          
+                          />
+                          </>                 
+                          )
+                          }
+                          
+                          )
+                        }
+                        </ScrollView>
+                      )
+                    })
+                    :
+                    <Text>No data</Text>
+                  }
+
+{
+                    groupOptionsRef.current ?
+                    groupOptionsRef.current.map((item, indice)=> {
+
+                      return (
+                        <ScrollView>
+                        {
+                          item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_MOTOR").map((item, index)=> {
+                          
+                          return (
+                          <>
+                          {
+                            !index ? (
+                            <>
+                            <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}} key={index}>{item.NombreGrupoRecurso}</Text> 
+                            </>
+                            ): <></>
+
+                            
+                          }
+                          <Text style={{marginTop: 15}} key={index}>{item.NombreOpcionRecurso} </Text>
+                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5}}/>
+                          <ButtonToggleGroup
+                          highlightBackgroundColor={'#00BEF0'}
+                          highlightTextColor={'white'}
+                          inactiveBackgroundColor={'transparent'}
+                          inactiveTextColor={'grey'}
+                          values={['MALO', 'REGULAR', 'EXCELENTE']}
+                          value = {respuestasQ[2]?.[index]?.Respuesta}
+                          onSelect={val => {
+                          var obj = {
+                            IdAsignacion: 1,
+                            CodigoVehiculo: selectedVehicle.key,
+                            CodigoUsuario: driver.key,
+                            CodigoGrupoRecurso: item.IdGrupoRecurso,
+                            CodigoOpcionRecurso: item.IdOpcionRecurso,
+                            Respuesta: val
+                          }
+                          var newArray = [...respuestasQ];
+                          
+                          newArray[2][index] = obj;
+                          setRespuestasQ(newArray)
+                          console.log(respuestasRefQ.current)
                           }}
                           
                           />
@@ -419,19 +549,11 @@ LogBox.ignoreAllLogs();
 
               </ScrollView>
           </ProgressStep>
-        {/*   <ProgressStep label="MOT">
-              <View style={{ alignItems: 'center' }}>
-                  <Text>This is the content within step 3!</Text>
-              </View>
-          </ProgressStep> */}
-         {/*  <ProgressStep label="CAR">
-              <View style={{ alignItems: 'center' }}>
-                  <Text>This is the content within step 3!</Text>
-              </View>
-          </ProgressStep> */}
           <ProgressStep label="OBS">
               <View style={{ alignItems: 'center' }}>
-                  <Text>This is the content within step 3!</Text>
+
+              <Button title="Choose Photo" onPress={pickImage} />
+              <Button title="Upload Photo" onPress={handleUploadPhoto} />
               </View>
           </ProgressStep>
         </ProgressSteps>
