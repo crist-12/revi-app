@@ -1,107 +1,116 @@
 
 import React, { useEffect } from 'react';
 import {
-   StyleSheet, 
-   Text, 
-   Button,
-   View, 
-   StatusBar, 
-   TextInput, 
-   KeyboardAvoidingView, 
-   Platform, 
-   ScrollView, 
-   LogBox } from 'react-native';
+  StyleSheet,
+  Text,
+  Button,
+  View,
+  StatusBar,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  LogBox,
+  Image,
+  TouchableOpacity,
+  Modal
+} from 'react-native';
 import { ProgressStep, ProgressSteps } from 'react-native-progress-steps';
 import ModalSelector from 'react-native-modal-selector-searchable'
 import ButtonToggleGroup from 'react-native-button-toggle-group';
 import useState from 'react-usestateref'
 import * as ImagePicker from 'expo-image-picker'
+import Swiper from 'react-native-swiper'
+import Fontisto from 'react-native-vector-icons/Fontisto'
+import Lightbox from 'react-native-lightbox-v2';
+import ImageView from "react-native-image-viewing";
 
 
-const HomeScreen = ({navigation}) => {
+const HomeScreen = ({ navigation }) => {
 
-const [users, setUsers] = React.useState([]);
-const [valueToggle, setValueToggle] = React.useState();
-const [vehicles, setVehicle] = React.useState([]);
-const [selectedVehicle, setSelectedVehicle] = React.useState([])
-const [driver, setDriver] = React.useState([]);  
-const [isLoading, setIsLoading] = React.useState(true);
-const [quantityRows, setQuantityRows] = React.useState();
-const [nextValue, setNextValue] = React.useState();
-const [kmActual, setKmActual] = React.useState();
-const [groupsOptions, setGroupsOptions, groupOptionsRef] = useState();
-const [respuestasQ, setRespuestasQ, respuestasRefQ] = useState([[],[],[]]);
-const [interLength, setInterLength, interLengthRef] = useState(0)
-const [lengthArr, setLengthArr, lengthArrRef] = useState(0);
-const [photo, setPhoto, photoRef] = useState([])
-let celda;
-
-
-
-var flag = false;
-
-const [error, setError] = useState(false) // DEBO CAMBIARLO A TRUE DESPUES
+  const [users, setUsers] = React.useState([]);
+  const [valueToggle, setValueToggle] = React.useState();
+  const [vehicles, setVehicle] = React.useState([]);
+  const [selectedVehicle, setSelectedVehicle] = React.useState([])
+  const [driver, setDriver] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [quantityRows, setQuantityRows] = React.useState();
+  const [nextValue, setNextValue] = React.useState();
+  const [kmActual, setKmActual] = React.useState();
+  const [groupsOptions, setGroupsOptions, groupOptionsRef] = useState();
+  const [respuestasQ, setRespuestasQ, respuestasRefQ] = useState([[], [], []]);
+  const [interLength, setInterLength, interLengthRef] = useState(0)
+  const [lengthArr, setLengthArr, lengthArrRef] = useState(0);
+  const [photo, setPhoto, photoRef] = useState([])
+  const [visible1, setIsVisible1] = React.useState(false);
+  let celda;
 
 
 
-const getDropDownData = async() => {
-  try{
-    const response = await fetch("http://192.168.1.134:3000/users");
-    const data = await response.json();   
-    setUsers(data);
-  }catch(error){
+  var flag = false;
+
+  const [error, setError] = useState(false) // DEBO CAMBIARLO A TRUE DESPUES
+
+
+
+  const getDropDownData = async () => {
+    try {
+      const response = await fetch("http://192.168.1.134:3000/users");
+      const data = await response.json();
+      setUsers(data);
+    } catch (error) {
       console.log(error);
-  }
-}
-
-const getAllVehicles = async() => {
-  try{
-    const response = await fetch("http://192.168.1.134:3000/vehiculos");
-    const data = await response.json();   
-    setVehicle(data);
-  }catch(error){
-      console.log(error);
-  }
-}
-
-const getGroupAndOptions = async() => {
-  try{
-    const response = await fetch("http://192.168.1.134:3000/groups");
-    const data = await response.json();  
-    setGroupsOptions(data);
-  }catch(error){
-    console.log(error)
-  }
-}
-
-
-const doesAssignmentExist = async() => {
-  try{
-    const response = await fetch("http://192.168.1.134:3000/vehiculos/" + new URLSearchParams({
-      userId : driver.key,
-      vehCode : selectedVehicle.key
-    }));
-    const data = await response.json();   
-    if(data[0].Cantidad == 0) flag = true; else flag = false;
-    setQuantityRows(data);
-  }catch(error){
-    console.log(error)
-  }
-}
-
-
-useEffect(() => {
-  (async () => {
-    if (Platform.OS !== 'web') {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Necesitas darle acceso a la cámara a esta aplicación.');
-      }
     }
-  })();
-}, []);
+  }
 
-  useEffect(()=>{
+  const getAllVehicles = async () => {
+    try {
+      const response = await fetch("http://192.168.1.134:3000/vehiculos");
+      const data = await response.json();
+      setVehicle(data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const getGroupAndOptions = async () => {
+    try {
+      const response = await fetch("http://192.168.1.134:3000/groups");
+      const data = await response.json();
+      setGroupsOptions(data);
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
+  const doesAssignmentExist = async () => {
+    try {
+      const response = await fetch("http://192.168.1.134:3000/vehiculos/" + new URLSearchParams({
+        userId: driver.key,
+        vehCode: selectedVehicle.key
+      }));
+      const data = await response.json();
+      if (data[0].Cantidad == 0) flag = true; else flag = false;
+      setQuantityRows(data);
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Necesitas darle acceso a la cámara a esta aplicación.');
+        }
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
     getGroupAndOptions();
     getDropDownData();
     getAllVehicles();
@@ -111,41 +120,41 @@ useEffect(() => {
   }, [])
 
 
-  const handlerItem = async(option, type) => {
-    if(type == "driver"){
+  const handlerItem = async (option, type) => {
+    if (type == "driver") {
       setDriver(option);
-    }else{
+    } else {
       setSelectedVehicle(option);
     }
   }
 
-  const handleStepDG = async() => {
+  const handleStepDG = async () => {
     await doesAssignmentExist();
-    if(!flag && driver.key && selectedVehicle.key){
+    if (!flag && driver.key && selectedVehicle.key) {
       alert("Esta asignación ya existe")
       setError(true);
       return
     }
-    if (driver.key && selectedVehicle.key){
-     setError(false);
+    if (driver.key && selectedVehicle.key) {
+      setError(false);
     }
-    else{
+    else {
       alert("Asegúrate de seleccionar un vehículo y un conductor antes de proseguir")
       setError(true);
-    } 
-  }
-
-  const handleStepEG = async()=> {
-    if(kmActual && nextValue){
-      setError(false);
-    }else{
-      setError(true)
-      if(!nextValue) return alert("El valor del próximo cambio es requerido");
-      if(!kmActual) return alert("El valor del kilometraje actual es requerido");
     }
   }
 
-  const handleStepINT = async() => {
+  const handleStepEG = async () => {
+    if (kmActual && nextValue) {
+      setError(false);
+    } else {
+      setError(true)
+      if (!nextValue) return alert("El valor del próximo cambio es requerido");
+      if (!kmActual) return alert("El valor del kilometraje actual es requerido");
+    }
+  }
+
+  const handleStepINT = async () => {
 
     var tamArray = 0;
     groupOptionsRef.current.filter(x => x.IdGrupoRecurso == "ASI_DET_INTERIOR").map(item => {
@@ -153,10 +162,10 @@ useEffect(() => {
       setInterLength(tamArray);
     })
 
-    if(respuestasRefQ.current.length < interLengthRef.current){
+    if (respuestasRefQ.current.length < interLengthRef.current) {
       setError(true)
       return alert("Asegúrate de haber calificado todos los ítems antes de continuar")
-    }else{
+    } else {
       setError(false)
     }
   }
@@ -168,21 +177,21 @@ useEffect(() => {
       tamArray = item.opciones.length;
     })
 
-    if(respuestasRefQ.current.length != tamArray){
+    if (respuestasRefQ.current.length != tamArray) {
       setError(true)
       return alert("Asegúrate de haber calificado todos los ítems antes de continuar")
-    }else{
+    } else {
       setError(false)
     }
   }
- 
+
   const createFormData = (images = {}) => {
     const data = new FormData();
 
     data.append('images', {
-        name: images.fileName,
-        type: photo.type,
-        uri: Platform.OS === 'ios' ? photo.uri.replace('file://', '') : photo.uri
+      name: images.fileName,
+      type: photo.type,
+      uri: Platform.OS === 'ios' ? photo.uri.replace('file://', '') : photo.uri
     });
 
     return data;
@@ -190,381 +199,612 @@ useEffect(() => {
 
   const handleChoosePhoto = () => {
     launchImageLibrary({ noData: true }, (response) => {
-       console.log(response);
+      console.log(response);
       if (response) {
         setPhoto(response);
       }
     });
   };
 
-  const handleUploadPhoto = async() => {
-      try{
-       const response = await fetch("http://192.168.1.134:3000/saveimages", {
-          method: 'POST',
-          body: createFormData(photo)
-        });
-       console.log(response.json())
-      }catch(error){
-        console.log(error)
+  const handleUploadPhoto = async () => {
+    /* try{
+     const response = await fetch("http://192.168.1.134:3000/saveimages", {
+        method: 'POST',
+        body: createFormData(photo)
+      });
+     console.log(response.json())
+    }catch(error){
+      console.log(error)
+    } */
+    try {
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(photoRef.current)
       }
+
+      const response = await fetch("http://192.168.1.134:3000/saveimages", options);
+      const data = await response.json();
+      console.log(data);
+      alert("Estoy aqui")
+    } catch (error) {
+      alert(error)
+      console.log(error);
+    }
   }
 
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      base64: true,
-      quality: 1,
-    });
+  const pickImage = async (code, type) => {
+    let result;
+    if (type == "camera") {
+      result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        base64: true,
+        quality: 1,
+      });
+    } else if (type == "gallery") {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        base64: true,
+        quality: 1,
+      });
+    }
 
-    console.log(result.base64)
-/*     if (!result.cancelled) {
-      let newArr = [...photo]
-      newArr.push(result.uri)
-      console.log(result)
-      setPhoto(newArr);
-      console.log(photoRef.current)
-    } */
+    console.log(code)
+    console.log(type)
 
-    if(!result.cancelled){
+    // console.log(result.base64)
+    /*     if (!result.cancelled) {
+          let newArr = [...photo]
+          newArr.push(result.uri)
+          console.log(result)
+          setPhoto(newArr);
+          console.log(photoRef.current)
+        } */
+
+    if (!result.cancelled) {
+      con
       let newArr = [...photo];
-      newArr.push(result.base64)
+      newArr[code] = result.base64
       setPhoto(newArr);
     }
   };
 
-LogBox.ignoreAllLogs();
+  LogBox.ignoreAllLogs();
 
   return (
 
-    <KeyboardAvoidingView 
-    style = {{flex: 1}}
-    behavior = {Platform.OS === 'ios' ? 'padding' : 'height'}
-    keyboardVerticalOffset = {-50}
->
-    {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={-50}>
+      <View style={styles.container}>
 
-      <StatusBar barStyle="light-content"/>
-     
-      {
-        isLoading ?
-        <>
-        <Text>Estoy cargando</Text>
-        </> :
-        <>
-        <View style = {styles.header, {backgroundColor: 'white', flex: 1, width: '100%'}}>
-        <View style={styles.header}>
-        <Text style={styles.title}>Asignación de Vehículos</Text>
-        </View>
-      </View>
-      <View style={styles.body}>
-        <View style={{marginLeft: 20, marginRight: 20, flex: 1}}>
-        <ProgressSteps>
-          <ProgressStep label="DG" errors={error} /*onNext = {handleStepDG}*/ nextBtnText = "Siguiente">
-              <View style={styles.picker}>
-              <Text style={{marginBottom: 5}}>Seleccione un conductor: </Text>
+        <StatusBar barStyle="light-content" />
 
-              <ModalSelector
-                    data={users}
-                    initValue={"Selecciona un conductor"}
-                    supportedOrientations={['landscape']}
-                    accessible={true}
-                    keyExtractor={item => item.key}
-                    labelExtractor={item => item.label}
-                    cancelText='Cancelar'
-                    searchText='Buscar...'                   
-                    searchStyle={{height: 40, justifyContent: 'center'}}
-                    onChange={(option)=>{ handlerItem(option, "driver")}}>
-
-                    <TextInput
-                        style={{borderWidth:1, borderColor:'#ccc', padding:10, height:40}}
-                        editable={false}
-                        placeholder="Selecciona un conductor"
-                        value={driver.label} />
-                </ModalSelector>
-
-                <Text style={{marginTop: 10, marginBottom: 5}}>Seleccione el carro a asignar</Text>
-                <ModalSelector
-                    data={vehicles}
-                    initValue={"Selecciona un vehículo"}
-                    supportedOrientations={['landscape']}
-                    accessible={true}
-                    keyExtractor={item => item.key}
-                    labelExtractor={item => item.label}
-                    cancelText='Cancelar'
-                    searchText='Buscar...'                   
-                    searchStyle={{height: 40, justifyContent: 'center'}}
-                    onChange={(option)=>{ handlerItem(option)}}>
-
-                    <TextInput
-                        style={{borderWidth:1, borderColor:'#ccc', padding:10, height:40}}
-                        editable={false}
-                        placeholder="Selecciona un vehículo"
-                        value={selectedVehicle.label} />
-                </ModalSelector>
-                <View style={styles.data}>
-                  <Text style={{textAlign: 'center', fontWeight: 'bold'}}>DATOS GENERALES</Text>
-                  <Text style={{fontWeight: 'bold', marginTop: 15}}>CONDUCTOR</Text> 
-                   {
-                    driver.key ? 
-                    <>
-
-                    <Text>NOMBRE: {driver.label}</Text>
-                    <Text>SUCURSAL: {driver.NombreUbicacion}</Text>
-                    </>: 
-                    <Text>No hay datos disponibles</Text>
-                  }
-
-                  <Text style={{fontWeight: 'bold', marginTop: 15}}>VEHÍCULO</Text> 
-                  {
-                    selectedVehicle.key ? 
-                    <>
-                    <Text>PLACA: {selectedVehicle.label}</Text>
-                    <Text>MODELO: {selectedVehicle.VehMarca} {selectedVehicle.VehModelo}</Text>
-                    <Text>AÑO: {selectedVehicle.VehAno}</Text>
-                    <Text>TIPO DE COMBUSTIBLE: {selectedVehicle.VehTipoCombustible ?? ""}</Text>
-                    <Text>KILOMETRAJE: {selectedVehicle.VehKilometraje}</Text>
-                    </>: 
-                    <Text>No hay datos disponibles</Text>
-                  }
-
+        {
+          isLoading ?
+            <>
+              <Text>Estoy cargando</Text>
+            </> :
+            <>
+              <View style={styles.header, { backgroundColor: 'white', flex: 1, width: '100%' }}>
+                <View style={styles.header}>
+                  <Text style={styles.title}>Asignación de Vehículos</Text>
                 </View>
               </View>
-          </ProgressStep>
-          <ProgressStep label="EG" nextBtnText="Siguiente" previousBtnText = "Anterior" /*onNext={handleStepEG}*/ errors={error}>
-              <View>
-                  <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>ESTADO GENERAL DEL VEHÍCULO</Text>
-                  <View>
-                  <Text>PRÓXIMO CAMBIO:</Text>
-                    <TextInput
-                    placeholder='Fecha de próximo cambio'
-                     value = {nextValue}
-                     onChangeText={(val)=> setNextValue(val)}
-                     style={styles.inputs}/>
-                    <Text>KILOMETRAJE ACTUAL:</Text>
-                    <TextInput
-                    placeholder='Kilometraje actual'
-                    value={kmActual}
-                    onChangeText={(val)=> setKmActual(val)}
-                    style={styles.inputs}/>
-                    <Text style={{marginBottom: 10}}>ESTADO DEL TANQUE DE COMBUSTIBLE:</Text>
-                    <ButtonToggleGroup
-                          highlightBackgroundColor={'#00BEF0'}
-                          highlightTextColor={'white'}
-                          inactiveBackgroundColor={'transparent'}
-                          inactiveTextColor={'grey'}
-                          values={['E', '1/4', '1/2', '3/4', 'F']}
-                          value={valueToggle}
-                          onSelect={val => setValueToggle(val)}
-                      />
-                    <Text style={{marginTop: 15}}>OBSERVACIONES:</Text>
-                    <TextInput multiline={true} style={styles.inputs}/>
-                  </View>
-              </View>
-          </ProgressStep>
-          <ProgressStep label="INT" /*onNext = {handleStepINT}*/ nextBtnText="Siguiente" previousBtnText = "Anterior" errors={error}>
-              <ScrollView>
-              <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>DETALLES DEL VEHÍCULO</Text>
-                  {
-                    groupOptionsRef.current ?
-                    groupOptionsRef.current.map((item, index)=> {
+              <View style={styles.body}>
+                <View style={{ marginLeft: 20, marginRight: 20, flex: 1 }}>
+                  <ProgressSteps>
+                    <ProgressStep label="DG" errors={error} /*onNext = {handleStepDG}*/ nextBtnText="Siguiente">
+                      <View style={styles.picker}>
+                        <Text style={{ marginBottom: 5 }}>Seleccione un conductor: </Text>
 
-                      return (
-                        
-                        <ScrollView>
-                        {
-                         // setLengthArr(index)
-                        }
-                        {
-                          item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_INTERIOR").map((item, index)=> {
-                          
-                          return (
-                          <>
+                        <ModalSelector
+                          data={users}
+                          initValue={"Selecciona un conductor"}
+                          supportedOrientations={['landscape']}
+                          accessible={true}
+                          keyExtractor={item => item.key}
+                          labelExtractor={item => item.label}
+                          cancelText='Cancelar'
+                          searchText='Buscar...'
+                          searchStyle={{ height: 40, justifyContent: 'center' }}
+                          onChange={(option) => { handlerItem(option, "driver") }}>
+
+                          <TextInput
+                            style={{ borderWidth: 1, borderColor: '#ccc', padding: 10, height: 40 }}
+                            editable={false}
+                            placeholder="Selecciona un conductor"
+                            value={driver.label} />
+                        </ModalSelector>
+
+                        <Text style={{ marginTop: 10, marginBottom: 5 }}>Seleccione el carro a asignar</Text>
+                        <ModalSelector
+                          data={vehicles}
+                          initValue={"Selecciona un vehículo"}
+                          supportedOrientations={['landscape']}
+                          accessible={true}
+                          keyExtractor={item => item.key}
+                          labelExtractor={item => item.label}
+                          cancelText='Cancelar'
+                          searchText='Buscar...'
+                          searchStyle={{ height: 40, justifyContent: 'center' }}
+                          onChange={(option) => { handlerItem(option) }}>
+
+                          <TextInput
+                            style={{ borderWidth: 1, borderColor: '#ccc', padding: 10, height: 40 }}
+                            editable={false}
+                            placeholder="Selecciona un vehículo"
+                            value={selectedVehicle.label} />
+                        </ModalSelector>
+                        <View style={styles.data}>
+                          <Text style={{ textAlign: 'center', fontWeight: 'bold' }}>DATOS GENERALES</Text>
+                          <Text style={{ fontWeight: 'bold', marginTop: 15 }}>CONDUCTOR</Text>
                           {
-                            !index ? (
-                            <>
-                            <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}} key={index}>{item.NombreGrupoRecurso}</Text> 
-                            </>
-                            ): <></>
-                          }
-                          <Text style={{marginTop: 15}} key={index}>{item.NombreOpcionRecurso}</Text>
-                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5}}/>
-                          <ButtonToggleGroup
-                          highlightBackgroundColor={'#00BEF0'}
-                          highlightTextColor={'white'}
-                          inactiveBackgroundColor={'transparent'}
-                          inactiveTextColor={'grey'}
-                          values={['MALO', 'REGULAR', 'EXCELENTE']}
-                          value = {respuestasQ[0][index]?.Respuesta ?? ""}
-                          onSelect={val => {
-                          var obj = {
-                            IdAsignacion: 1,
-                            CodigoVehiculo: selectedVehicle.key,
-                            CodigoUsuario: driver.key,
-                            CodigoGrupoRecurso: item.IdGrupoRecurso,
-                            CodigoOpcionRecurso: item.IdOpcionRecurso,
-                            Respuesta: val
-                          }
-                          var newArray = [...respuestasQ];
-                          newArray[0][index] = obj;
-                          setRespuestasQ(newArray)
-                          setLengthArr(newArray.length);
-                          }}
-                          
-                          />
-                          </>                 
-                          )
-                          })
-                        }
-                        </ScrollView>
-                      )
-                    })
-                    :
-                    <Text>No data</Text>
-                  }
+                            driver.key ?
+                              <>
 
-              </ScrollView>
-          </ProgressStep>
-          <ProgressStep label="EXT/MTR" nextBtnText="Siguiente" previousBtnText = "Anterior" /*onNext={handleStepEXTMTR}*/ errors={false}>
-          <ScrollView>
-              <Text style={{textAlign: 'center', fontWeight: 'bold', marginBottom: 15}}>DETALLES DEL VEHÍCULO</Text>
-                  {
-                    groupOptionsRef.current ?
-                    groupOptionsRef.current.map((item, indice)=> {
+                                <Text>NOMBRE: {driver.label}</Text>
+                                <Text>SUCURSAL: {driver.NombreUbicacion}</Text>
+                              </> :
+                              <Text>No hay datos disponibles</Text>
+                          }
 
-                      return (
-                        <ScrollView>
-                        {
-                          item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_EXTERIOR").map((item, index)=> {
-                          
-                          return (
-                          <>
+                          <Text style={{ fontWeight: 'bold', marginTop: 15 }}>VEHÍCULO</Text>
                           {
-                            !index ? (
-                            <>
-                            <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}} key={index}>{item.NombreGrupoRecurso}</Text> 
-                            </>
-                            ): <></>
-
-                            
+                            selectedVehicle.key ?
+                              <>
+                                <Text>PLACA: {selectedVehicle.label}</Text>
+                                <Text>MODELO: {selectedVehicle.VehMarca} {selectedVehicle.VehModelo}</Text>
+                                <Text>AÑO: {selectedVehicle.VehAno}</Text>
+                                <Text>TIPO DE COMBUSTIBLE: {selectedVehicle.VehTipoCombustible ?? ""}</Text>
+                                <Text>KILOMETRAJE: {selectedVehicle.VehKilometraje}</Text>
+                              </> :
+                              <Text>No hay datos disponibles</Text>
                           }
-                          <Text style={{marginTop: 15}} key={index}>{item.NombreOpcionRecurso} </Text>
-                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5}}/>
+
+                        </View>
+                      </View>
+                    </ProgressStep>
+                    <ProgressStep label="EG" nextBtnText="Siguiente" previousBtnText="Anterior" /*onNext={handleStepEG}*/ errors={error}>
+                      <View>
+                        <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: 15 }}>ESTADO GENERAL DEL VEHÍCULO</Text>
+                        <View>
+                          <Text>PRÓXIMO CAMBIO:</Text>
+                          <TextInput
+                            placeholder='Fecha de próximo cambio'
+                            value={nextValue}
+                            onChangeText={(val) => setNextValue(val)}
+                            style={styles.inputs} />
+                          <Text>KILOMETRAJE ACTUAL:</Text>
+                          <TextInput
+                            placeholder='Kilometraje actual'
+                            value={kmActual}
+                            onChangeText={(val) => setKmActual(val)}
+                            style={styles.inputs} />
+                          <Text style={{ marginBottom: 10 }}>ESTADO DEL TANQUE DE COMBUSTIBLE:</Text>
                           <ButtonToggleGroup
-                          highlightBackgroundColor={'#00BEF0'}
-                          highlightTextColor={'white'}
-                          inactiveBackgroundColor={'transparent'}
-                          inactiveTextColor={'grey'}
-                          values={['MALO', 'REGULAR', 'EXCELENTE']}
-                          value = {respuestasQ[1]?.[index]?.Respuesta}
-                          onSelect={val => {
-                          var obj = {
-                            IdAsignacion: 1,
-                            CodigoVehiculo: selectedVehicle.key,
-                            CodigoUsuario: driver.key,
-                            CodigoGrupoRecurso: item.IdGrupoRecurso,
-                            CodigoOpcionRecurso: item.IdOpcionRecurso,
-                            Respuesta: val
-                          }
-                          var newArray = [...respuestasQ];
-                          
-                          newArray[1][index] = obj;
-                          setRespuestasQ(newArray)
-                          console.log(respuestasRefQ.current)
-                          }}
-                          
+                            highlightBackgroundColor={'#00BEF0'}
+                            highlightTextColor={'white'}
+                            inactiveBackgroundColor={'transparent'}
+                            inactiveTextColor={'grey'}
+                            values={['E', '1/4', '1/2', '3/4', 'F']}
+                            value={valueToggle}
+                            onSelect={val => setValueToggle(val)}
                           />
-                          </>                 
-                          )
-                          }
-                          
-                          )
-                        }
-                        </ScrollView>
-                      )
-                    })
-                    :
-                    <Text>No data</Text>
-                  }
-
-{
-                    groupOptionsRef.current ?
-                    groupOptionsRef.current.map((item, indice)=> {
-
-                      return (
-                        <ScrollView>
+                          <Text style={{ marginTop: 15 }}>OBSERVACIONES:</Text>
+                          <TextInput multiline={true} style={styles.inputs} />
+                        </View>
+                      </View>
+                    </ProgressStep>
+                    <ProgressStep label="INT" /*onNext = {handleStepINT}*/ nextBtnText="Siguiente" previousBtnText="Anterior" errors={error}>
+                      <ScrollView>
+                        <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: 15 }}>DETALLES DEL VEHÍCULO</Text>
                         {
-                          item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_MOTOR").map((item, index)=> {
-                          
-                          return (
-                          <>
-                          {
-                            !index ? (
-                            <>
-                            <Text style={{fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10}} key={index}>{item.NombreGrupoRecurso}</Text> 
-                            </>
-                            ): <></>
+                          groupOptionsRef.current ?
+                            groupOptionsRef.current.map((item, index) => {
 
-                            
-                          }
-                          <Text style={{marginTop: 15}} key={index}>{item.NombreOpcionRecurso} </Text>
-                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5}}/>
-                          <ButtonToggleGroup
-                          highlightBackgroundColor={'#00BEF0'}
-                          highlightTextColor={'white'}
-                          inactiveBackgroundColor={'transparent'}
-                          inactiveTextColor={'grey'}
-                          values={['MALO', 'REGULAR', 'EXCELENTE']}
-                          value = {respuestasQ[2]?.[index]?.Respuesta}
-                          onSelect={val => {
-                          var obj = {
-                            IdAsignacion: 1,
-                            CodigoVehiculo: selectedVehicle.key,
-                            CodigoUsuario: driver.key,
-                            CodigoGrupoRecurso: item.IdGrupoRecurso,
-                            CodigoOpcionRecurso: item.IdOpcionRecurso,
-                            Respuesta: val
-                          }
-                          var newArray = [...respuestasQ];
-                          
-                          newArray[2][index] = obj;
-                          setRespuestasQ(newArray)
-                          console.log(respuestasRefQ.current)
-                          }}
-                          
-                          />
-                          </>                 
-                          )
-                          }
-                          
-                          )
+                              return (
+
+                                <ScrollView>
+                                  {
+                                    // setLengthArr(index)
+                                  }
+                                  {
+                                    item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_INTERIOR").map((item, index) => {
+
+                                      return (
+                                        <>
+                                          {
+                                            !index ? (
+                                              <>
+                                                <Text style={{ fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10 }} key={index}>{item.NombreGrupoRecurso}</Text>
+                                              </>
+                                            ) : <></>
+                                          }
+                                          <Text style={{ marginTop: 15 }} key={index}>{item.NombreOpcionRecurso}</Text>
+                                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5 }} />
+                                          <ButtonToggleGroup
+                                            highlightBackgroundColor={'#00BEF0'}
+                                            highlightTextColor={'white'}
+                                            inactiveBackgroundColor={'transparent'}
+                                            inactiveTextColor={'grey'}
+                                            values={['MALO', 'REGULAR', 'EXCELENTE']}
+                                            value={respuestasQ[0][index]?.Respuesta ?? ""}
+                                            onSelect={val => {
+                                              var obj = {
+                                                IdAsignacion: 1,
+                                                CodigoVehiculo: selectedVehicle.key,
+                                                CodigoUsuario: driver.key,
+                                                CodigoGrupoRecurso: item.IdGrupoRecurso,
+                                                CodigoOpcionRecurso: item.IdOpcionRecurso,
+                                                Respuesta: val
+                                              }
+                                              var newArray = [...respuestasQ];
+                                              newArray[0][index] = obj;
+                                              setRespuestasQ(newArray)
+                                              setLengthArr(newArray.length);
+                                            }}
+
+                                          />
+                                        </>
+                                      )
+                                    })
+                                  }
+                                </ScrollView>
+                              )
+                            })
+                            :
+                            <Text>No data</Text>
                         }
-                        </ScrollView>
-                      )
-                    })
-                    :
-                    <Text>No data</Text>
-                  }
 
-              </ScrollView>
-          </ProgressStep>
-          <ProgressStep label="OBS">
-              <View style={{ alignItems: 'center' }}>
+                      </ScrollView>
+                    </ProgressStep>
+                    <ProgressStep label="EXT/MTR" nextBtnText="Siguiente" previousBtnText="Anterior" /*onNext={handleStepEXTMTR}*/ errors={false}>
+                      <ScrollView>
+                        <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: 15 }}>DETALLES DEL VEHÍCULO</Text>
+                        {
+                          groupOptionsRef.current ?
+                            groupOptionsRef.current.map((item, indice) => {
 
+                              return (
+                                <ScrollView>
+                                  {
+                                    item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_EXTERIOR").map((item, index) => {
+
+                                      return (
+                                        <>
+                                          {
+                                            !index ? (
+                                              <>
+                                                <Text style={{ fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10 }} key={index}>{item.NombreGrupoRecurso}</Text>
+                                              </>
+                                            ) : <></>
+
+
+                                          }
+                                          <Text style={{ marginTop: 15 }} key={index}>{item.NombreOpcionRecurso} </Text>
+                                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5 }} />
+                                          <ButtonToggleGroup
+                                            highlightBackgroundColor={'#00BEF0'}
+                                            highlightTextColor={'white'}
+                                            inactiveBackgroundColor={'transparent'}
+                                            inactiveTextColor={'grey'}
+                                            values={['MALO', 'REGULAR', 'EXCELENTE']}
+                                            value={respuestasQ[1]?.[index]?.Respuesta}
+                                            onSelect={val => {
+                                              var obj = {
+                                                IdAsignacion: 1,
+                                                CodigoVehiculo: selectedVehicle.key,
+                                                CodigoUsuario: driver.key,
+                                                CodigoGrupoRecurso: item.IdGrupoRecurso,
+                                                CodigoOpcionRecurso: item.IdOpcionRecurso,
+                                                Respuesta: val
+                                              }
+                                              var newArray = [...respuestasQ];
+
+                                              newArray[1][index] = obj;
+                                              setRespuestasQ(newArray)
+                                              console.log(respuestasRefQ.current)
+                                            }}
+
+                                          />
+                                        </>
+                                      )
+                                    }
+
+                                    )
+                                  }
+                                </ScrollView>
+                              )
+                            })
+                            :
+                            <Text>No data</Text>
+                        }
+
+                        {
+                          groupOptionsRef.current ?
+                            groupOptionsRef.current.map((item, indice) => {
+
+                              return (
+                                <ScrollView>
+                                  {
+                                    item.opciones.filter(x => x.IdGrupoRecurso == "ASI_DET_MOTOR").map((item, index) => {
+
+                                      return (
+                                        <>
+                                          {
+                                            !index ? (
+                                              <>
+                                                <Text style={{ fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 10 }} key={index}>{item.NombreGrupoRecurso}</Text>
+                                              </>
+                                            ) : <></>
+
+
+                                          }
+                                          <Text style={{ marginTop: 15 }} key={index}>{item.NombreOpcionRecurso} </Text>
+                                          <View style={{ borderBottomColor: 'lightgray', borderBottomWidth: 1, marginBottom: 5 }} />
+                                          <ButtonToggleGroup
+                                            highlightBackgroundColor={'#00BEF0'}
+                                            highlightTextColor={'white'}
+                                            inactiveBackgroundColor={'transparent'}
+                                            inactiveTextColor={'grey'}
+                                            values={['MALO', 'REGULAR', 'EXCELENTE']}
+                                            value={respuestasQ[2]?.[index]?.Respuesta}
+                                            onSelect={val => {
+                                              var obj = {
+                                                IdAsignacion: 1,
+                                                CodigoVehiculo: selectedVehicle.key,
+                                                CodigoUsuario: driver.key,
+                                                CodigoGrupoRecurso: item.IdGrupoRecurso,
+                                                CodigoOpcionRecurso: item.IdOpcionRecurso,
+                                                Respuesta: val
+                                              }
+                                              var newArray = [...respuestasQ];
+
+                                              newArray[2][index] = obj;
+                                              setRespuestasQ(newArray)
+                                              console.log(respuestasRefQ.current)
+                                            }}
+
+                                          />
+                                        </>
+                                      )
+                                    }
+
+                                    )
+                                  }
+                                </ScrollView>
+                              )
+                            })
+                            :
+                            <Text>No data</Text>
+                        }
+
+                      </ScrollView>
+                    </ProgressStep>
+                    <ProgressStep label="OBS" finishBtnText="Finalizar" previousBtnText="Anterior">
+                      <View style={{ flex: 1 }}>
+                        {/* 
               <Button title="Choose Photo" onPress={pickImage} />
-              <Button title="Upload Photo" onPress={handleUploadPhoto} />
+              <Button title="Upload Photo" onPress={handleUploadPhoto} /> */}
+                        <ScrollView style={{ flex: 1 }}>
+                          <Swiper showsButtons={true} height={400}>
+                            <View style={styles.slide1}>
+                              <Text style={styles.text}>Foto Delantera</Text>
+                              <View style={{ flexDirection: 'row', marginTop: 15, backgroundColor: 'white' }}>
+                                <TouchableOpacity style={{ marginRight: 10 }} onPress={() => pickImage(0, 'camera')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="camera" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Tomar fotografía</Text>
+                                  </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => pickImage(0, 'gallery')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="photograph" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Subir desde galería</Text>
+                                  </View>
+                                </TouchableOpacity>
+                              </View>
+                              <View style={styles.picview}>
+                                <View style={styles.borderview}>
+                                  <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
+                                  <Image style={{
+                                    width: 248,
+                                    height: 198,
+                                  }}
+                                  source={{
+                                    uri: "data:image/png;base64," + photo[0]
+                                  }}
+                                  />
+                                  </TouchableOpacity>
+                                  <ImageView
+                                    images={[
+                                      {uri: "data:image/png;base64," + photo[0]}
+                                    ]}
+                                    presentationStyle="overFullScreen"
+                                    imageIndex={0}
+                                    visible={visible}
+                                    onRequestClose={() => setIsVisible(false)}
+                                  />
+                                </View>
+                              </View>
+                            </View>
+                            <View style={styles.slide2}>
+                              <Text style={styles.text}>Foto Trasera</Text>
+                              <View style={{ flexDirection: 'row', marginTop: 15, backgroundColor: 'white' }}>
+                                <TouchableOpacity style={{ marginRight: 10 }} onPress={() => pickImage(1, 'camera')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="camera" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Tomar fotografía</Text>
+                                  </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => pickImage(1, 'gallery')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="photograph" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Subir desde galería</Text>
+                                  </View>
+                                </TouchableOpacity>
+                              </View>
+                              <View style={styles.picview}>
+                                <View style={styles.borderview}>
+                                <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
+                                  <Image style={{
+                                    width: 248,
+                                    height: 198,
+                                  }}
+                                  source={{
+                                    uri: "data:image/png;base64," + photo[1]
+                                  }}
+                                  />
+                                  </TouchableOpacity>
+                                  <ImageView
+                                    images={[
+                                      {uri: "data:image/png;base64," + photo[1]}
+                                    ]}
+                                    presentationStyle="overFullScreen"
+                                    imageIndex={0}
+                                    visible={visible}
+                                    onRequestClose={() => setIsVisible(false)}
+                                  />
+                                </View>
+                              </View>
+                            </View>
+                            <View style={styles.slide3}>
+                              <Text style={styles.text}>Foto lateral izquierda</Text>
+                              <View style={{ flexDirection: 'row', marginTop: 15, backgroundColor: 'white' }}>
+                                <TouchableOpacity style={{ marginRight: 10 }} onPress={() => pickImage(2, 'camera')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="camera" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Tomar fotografía</Text>
+                                  </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => pickImage(2, 'gallery')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="photograph" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Subir desde galería</Text>
+                                  </View>
+                                </TouchableOpacity>
+                              </View>
+                              <View style={styles.picview}>
+                                <View style={styles.borderview}>
+                                <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
+                                  <Image style={{
+                                    width: 248,
+                                    height: 198,
+                                  }}
+                                  source={{
+                                    uri: "data:image/png;base64," + photo[2]
+                                  }}
+                                  />
+                                  </TouchableOpacity>
+                                  <ImageView
+                                    images={[
+                                      {uri: "data:image/png;base64," + photoRef.current[2]}
+                                    ]}
+                                    presentationStyle="overFullScreen"
+                                    imageIndex={0}
+                                    visible={visible}
+                                    onRequestClose={() => setIsVisible(false)}
+                                  />
+                                </View>
+                              </View>
+                            </View>
+                            <View style={styles.slide4}>
+                              <Text style={styles.text}>Foto lateral derecha</Text>
+                              <View style={{ flexDirection: 'row', marginTop: 15, backgroundColor: 'white' }}>
+                                <TouchableOpacity style={{ marginRight: 10 }} onPress={() => pickImage(3, 'camera')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="camera" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Tomar fotografía</Text>
+                                  </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => pickImage(3, 'gallery')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="photograph" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Subir desde galería</Text>
+                                  </View>
+                                </TouchableOpacity>
+                              </View>
+                              <View style={styles.picview}>
+                                <View style={styles.borderview}>
+                                <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
+                                  <Image style={{
+                                    width: 248,
+                                    height: 198,
+                                  }}
+                                  source={{
+                                    uri: "data:image/png;base64," + photo[3]
+                                  }}
+                                  />
+                                  </TouchableOpacity>
+                                  <ImageView
+                                    images={[
+                                      {uri: "data:image/png;base64," + photoRef.current[3]}
+                                    ]}
+                                    presentationStyle="overFullScreen"
+                                    imageIndex={0}
+                                    visible={visible}
+                                    onRequestClose={() => setIsVisible(false)}
+                                  />
+                                </View>
+                              </View>
+                            </View>
+                            <View style={styles.slide5}>
+                              <Text style={styles.text}>Foto interior</Text>
+                              <View style={{ flexDirection: 'row', marginTop: 15, backgroundColor: 'white' }}>
+                                <TouchableOpacity style={{ marginRight: 10 }} onPress={() => pickImage(4, 'camera')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="camera" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Tomar fotografía</Text>
+                                  </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => pickImage(4, 'gallery')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="photograph" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Subir desde galería</Text>
+                                  </View>
+                                </TouchableOpacity>
+                              </View>
+                              <View style={styles.picview}>
+                                <View style={styles.borderview}>
+                                <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
+                                  <Image style={{
+                                    width: 248,
+                                    height: 198,
+                                  }}
+                                  source={{
+                                    uri: "data:image/png;base64," + photo[4]
+                                  }}
+                                  />
+                                  </TouchableOpacity>
+                                  <ImageView
+                                    images={[
+                                      {uri: "data:image/png;base64," + photoRef.current[4]}
+                                    ]}
+                                    presentationStyle="overFullScreen"
+                                    imageIndex={0}
+                                    visible={visible}
+                                    onRequestClose={() => setIsVisible(false)}
+                                  />
+                                </View>
+                              </View>
+                            </View>
+                          </Swiper>
+                        </ScrollView>
+                      </View>
+                    </ProgressStep>
+                  </ProgressSteps>
+                </View>
               </View>
-          </ProgressStep>
-        </ProgressSteps>
-        </View>
+
+            </>
+        }
       </View>
-      
-     </>
-     }
-    </View>
-    {/* </TouchableWithoutFeedback> */}
-      </KeyboardAvoidingView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -597,8 +837,8 @@ const styles = StyleSheet.create({
     margin: 15,
   },
   picker: {
-    margin:0
-  }, 
+    margin: 0
+  },
   data: {
     marginTop: 20,
     borderColor: 'lightgray',
@@ -616,5 +856,71 @@ const styles = StyleSheet.create({
     borderColor: 'lightgray',
     borderWidth: 1,
     marginVertical: 10
+  },
+  slide1: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#9DD6EB',
+    padding: 10,
+    borderRadius: 20
+  },
+
+  slide2: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#97CAE5',
+    padding: 10,
+    borderRadius: 20
+  },
+
+  slide3: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#92BBD9',
+    padding: 10,
+    borderRadius: 20
+  },
+
+  slide4: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#7dd0ec',
+    padding: 10,
+    borderRadius: 20
+  },
+
+  slide5: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#71aee0',
+    padding: 10,
+    borderRadius: 20
+  },
+
+  text: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold'
+  },
+  picview: {
+    padding: 10,
+    backgroundColor: 'white',
+    flex: 1,
+    height: '100%',
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  borderview: {
+    width: 250,
+    height: 200,
+    borderRadius: 1,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'lightgray'
   }
 });
