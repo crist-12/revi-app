@@ -22,27 +22,32 @@ import useState from 'react-usestateref'
 import * as ImagePicker from 'expo-image-picker'
 import Swiper from 'react-native-swiper'
 import Fontisto from 'react-native-vector-icons/Fontisto'
-import Lightbox from 'react-native-lightbox-v2';
 import ImageView from "react-native-image-viewing";
 
 
 const HomeScreen = ({ navigation }) => {
 
-  const [users, setUsers] = React.useState([]);
-  const [valueToggle, setValueToggle] = React.useState();
-  const [vehicles, setVehicle] = React.useState([]);
-  const [selectedVehicle, setSelectedVehicle] = React.useState([])
-  const [driver, setDriver] = React.useState([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [users, setUsers] = React.useState([]); // Carga todos los conductores
+  const [valueToggle, setValueToggle] = React.useState(); // Almacena el valor del valor del tanque de combustible
+  const [vehicles, setVehicle] = React.useState([]); // Carga los vehículos registrados en el sistema
+  const [selectedVehicle, setSelectedVehicle] = React.useState([]) // Almacena los datos del vehículo seleccionado
+  const [driver, setDriver] = React.useState([]); // Almacena los datos del conductor seleccionado
+  const [isLoading, setIsLoading] = React.useState(true); // Banderita que indica si se está o no cargando algún proceso
   const [quantityRows, setQuantityRows] = React.useState();
-  const [nextValue, setNextValue] = React.useState();
-  const [kmActual, setKmActual] = React.useState();
-  const [groupsOptions, setGroupsOptions, groupOptionsRef] = useState();
-  const [respuestasQ, setRespuestasQ, respuestasRefQ] = useState([[], [], []]);
+  const [nextValue, setNextValue] = React.useState(); // Almacena el valor del siguiente cambio de aceite
+  const [kmActual, setKmActual] = React.useState(); // Almacena el valor del kilometraje actual de 
+  const [groupsOptions, setGroupsOptions, groupOptionsRef] = useState(); // Almacena el valor de los grupos a evaluar
+  const [respuestasQ, setRespuestasQ, respuestasRefQ] = useState([[], [], []]); // Almacena los valores de las respuestas de cada item
   const [interLength, setInterLength, interLengthRef] = useState(0)
   const [lengthArr, setLengthArr, lengthArrRef] = useState(0);
-  const [photo, setPhoto, photoRef] = useState([])
-  const [visible1, setIsVisible1] = React.useState(false);
+  const [photo, setPhoto, photoRef] = useState([]) // Almacena el valor de las fotografías
+  const [auxphoto, setAuxPhoto, auxRef] = useState([]) // Almacena el valor de las fotografías opcionales
+  const [ejemplo, setEjemplo, ejemploRef] = useState([]) // 
+  const [visible1, setIsVisible1] = React.useState(false); // Controla el ImageViewer en la primera imagen
+  const [visible2, setIsVisible2] = React.useState(false); // Controla el ImageViewer en la segunda imagen
+  const [visible3, setIsVisible3] = React.useState(false); // Controla el ImageViewer en la tercera imagen
+  const [visible4, setIsVisible4] = React.useState(false); // Controla el ImageViewer en la cuarta imagen
+  const [visible5, setIsVisible5] = React.useState(false); // Controla el ImageViewer en la quinta imagen
   let celda;
 
 
@@ -52,7 +57,7 @@ const HomeScreen = ({ navigation }) => {
   const [error, setError] = useState(false) // DEBO CAMBIARLO A TRUE DESPUES
 
 
-
+// Funcion que obtiene los datos de los usuarios para llenarse en el dropdown
   const getDropDownData = async () => {
     try {
       const response = await fetch("http://192.168.1.134:3000/users");
@@ -63,6 +68,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
+  // Función que obtiene los datos de todos los vehículos
   const getAllVehicles = async () => {
     try {
       const response = await fetch("http://192.168.1.134:3000/vehiculos");
@@ -73,6 +79,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
+  // Función que obtiene un objeto con todos los grupos y opciones a evaluar
   const getGroupAndOptions = async () => {
     try {
       const response = await fetch("http://192.168.1.134:3000/groups");
@@ -83,7 +90,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-
+// Función que comprueba si la asignación ya existe
   const doesAssignmentExist = async () => {
     try {
       const response = await fetch("http://192.168.1.134:3000/vehiculos/" + new URLSearchParams({
@@ -98,7 +105,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-
+// Hook de Efecto para solicitar permiso para acceder a la cámara y a la galería a la aplicación
   useEffect(() => {
     (async () => {
       if (Platform.OS !== 'web') {
@@ -110,6 +117,7 @@ const HomeScreen = ({ navigation }) => {
     })();
   }, []);
 
+  // Hook de Efecto para carga de los datos previos a mostrarse en la pantalla
   useEffect(() => {
     getGroupAndOptions();
     getDropDownData();
@@ -119,7 +127,7 @@ const HomeScreen = ({ navigation }) => {
     setIsLoading(false)
   }, [])
 
-
+// Función que almacena los valores seleccionados en el dropdown, recibe un parámetro de tipo string para diferenciar qué es lo que queremos guardar
   const handlerItem = async (option, type) => {
     if (type == "driver") {
       setDriver(option);
@@ -128,6 +136,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
+  // Validar si el STEP 1 - DATOS GENERALES cumple con las validaciones y nos permite proseguir a la siguiente página
   const handleStepDG = async () => {
     await doesAssignmentExist();
     if (!flag && driver.key && selectedVehicle.key) {
@@ -144,6 +153,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
+  // Validar si el STEP 2 - ESTADO GENERAL cumple con las validaciones y nos permite proseguir a la siguiente página
   const handleStepEG = async () => {
     if (kmActual && nextValue) {
       setError(false);
@@ -154,6 +164,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
+  // Validar si el STEP 3 - REVISIÓN INTERIOR se ha elegido a todos los items
   const handleStepINT = async () => {
 
     var tamArray = 0;
@@ -170,7 +181,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-
+  // Validar si el STEP 4 - REVISIÓN EXTERIORES Y MOTOR se han elegido todos los items
   const handleStepEXTMTR = () => {
     var tamArray = 0;
     groupOptionsRef.current.filter(x => x.IdGrupoRecurso == "ASI_DET_EXTERIOR" || x.IdGrupoRecurso == "ASI_DET_MOTOR" || x.IdGrupoRecurso == "ASI_DET_INTERIOR").map(item => {
@@ -185,37 +196,8 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-  const createFormData = (images = {}) => {
-    const data = new FormData();
-
-    data.append('images', {
-      name: images.fileName,
-      type: photo.type,
-      uri: Platform.OS === 'ios' ? photo.uri.replace('file://', '') : photo.uri
-    });
-
-    return data;
-  }
-
-  const handleChoosePhoto = () => {
-    launchImageLibrary({ noData: true }, (response) => {
-      console.log(response);
-      if (response) {
-        setPhoto(response);
-      }
-    });
-  };
-
+  // Función que controla la subida de las fotografías
   const handleUploadPhoto = async () => {
-    /* try{
-     const response = await fetch("http://192.168.1.134:3000/saveimages", {
-        method: 'POST',
-        body: createFormData(photo)
-      });
-     console.log(response.json())
-    }catch(error){
-      console.log(error)
-    } */
     try {
       const options = {
         method: 'POST',
@@ -235,7 +217,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-
+  // Función que controla la funcionalidad de escoger una imagen ya sea de la cámara o de la galería
   const pickImage = async (code, type) => {
     let result;
     if (type == "camera") {
@@ -254,22 +236,26 @@ const HomeScreen = ({ navigation }) => {
 
     console.log(code)
     console.log(type)
+    if (code != 5) {
+      if (!result.cancelled) {
+        let newArr = [...photo];
+        newArr[code] = result.base64
+        setPhoto(newArr);
+      }
+    } else {
+      if (!result.cancelled) {
+        let newArr = [...auxphoto];
 
-    // console.log(result.base64)
-    /*     if (!result.cancelled) {
-          let newArr = [...photo]
-          newArr.push(result.uri)
-          console.log(result)
-          setPhoto(newArr);
-          console.log(photoRef.current)
-        } */
+        newArr.push(result.base64)
+        setAuxPhoto(newArr)
 
-    if (!result.cancelled) {
-      con
-      let newArr = [...photo];
-      newArr[code] = result.base64
-      setPhoto(newArr);
+        let auxArr = [...photo];
+        auxArr.splice(5, 1, newArr)
+        setPhoto(auxArr);
+        console.log("newarray mide " + newArr.length)
+      }
     }
+
   };
 
   LogBox.ignoreAllLogs();
@@ -373,7 +359,7 @@ const HomeScreen = ({ navigation }) => {
                       <View>
                         <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: 15 }}>ESTADO GENERAL DEL VEHÍCULO</Text>
                         <View>
-                          <Text>PRÓXIMO CAMBIO:</Text>
+                          <Text>PRÓXIMO CAMBIO DE ACEITE:</Text>
                           <TextInput
                             placeholder='Fecha de próximo cambio'
                             value={nextValue}
@@ -611,24 +597,24 @@ const HomeScreen = ({ navigation }) => {
                               </View>
                               <View style={styles.picview}>
                                 <View style={styles.borderview}>
-                                  <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
-                                  <Image style={{
-                                    width: 248,
-                                    height: 198,
-                                  }}
-                                  source={{
-                                    uri: "data:image/png;base64," + photo[0]
-                                  }}
-                                  />
+                                  <TouchableOpacity onPress={() => setIsVisible1(true)} activeOpacity={0.5}>
+                                    <Image style={{
+                                      width: 248,
+                                      height: 198,
+                                    }}
+                                      source={{
+                                        uri: "data:image/png;base64," + photoRef.current[0]
+                                      }}
+                                    />
                                   </TouchableOpacity>
                                   <ImageView
                                     images={[
-                                      {uri: "data:image/png;base64," + photo[0]}
+                                      { uri: "data:image/png;base64," + photoRef.current[0] }
                                     ]}
                                     presentationStyle="overFullScreen"
                                     imageIndex={0}
-                                    visible={visible}
-                                    onRequestClose={() => setIsVisible(false)}
+                                    visible={visible1}
+                                    onRequestClose={() => setIsVisible1(false)}
                                   />
                                 </View>
                               </View>
@@ -651,24 +637,24 @@ const HomeScreen = ({ navigation }) => {
                               </View>
                               <View style={styles.picview}>
                                 <View style={styles.borderview}>
-                                <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
-                                  <Image style={{
-                                    width: 248,
-                                    height: 198,
-                                  }}
-                                  source={{
-                                    uri: "data:image/png;base64," + photo[1]
-                                  }}
-                                  />
+                                  <TouchableOpacity onPress={() => setIsVisible2(true)} activeOpacity={0.5}>
+                                    <Image style={{
+                                      width: 248,
+                                      height: 198,
+                                    }}
+                                      source={{
+                                        uri: "data:image/png;base64," + photoRef.current[1]
+                                      }}
+                                    />
                                   </TouchableOpacity>
                                   <ImageView
                                     images={[
-                                      {uri: "data:image/png;base64," + photo[1]}
+                                      { uri: "data:image/png;base64," + photoRef.current[1] }
                                     ]}
                                     presentationStyle="overFullScreen"
                                     imageIndex={0}
-                                    visible={visible}
-                                    onRequestClose={() => setIsVisible(false)}
+                                    visible={visible2}
+                                    onRequestClose={() => setIsVisible2(false)}
                                   />
                                 </View>
                               </View>
@@ -691,24 +677,24 @@ const HomeScreen = ({ navigation }) => {
                               </View>
                               <View style={styles.picview}>
                                 <View style={styles.borderview}>
-                                <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
-                                  <Image style={{
-                                    width: 248,
-                                    height: 198,
-                                  }}
-                                  source={{
-                                    uri: "data:image/png;base64," + photo[2]
-                                  }}
-                                  />
+                                  <TouchableOpacity onPress={() => setIsVisible3(true)} activeOpacity={0.5}>
+                                    <Image style={{
+                                      width: 248,
+                                      height: 198,
+                                    }}
+                                      source={{
+                                        uri: "data:image/png;base64," + photoRef.current[2]
+                                      }}
+                                    />
                                   </TouchableOpacity>
                                   <ImageView
                                     images={[
-                                      {uri: "data:image/png;base64," + photoRef.current[2]}
+                                      { uri: "data:image/png;base64," + photoRef.current[2] }
                                     ]}
                                     presentationStyle="overFullScreen"
                                     imageIndex={0}
-                                    visible={visible}
-                                    onRequestClose={() => setIsVisible(false)}
+                                    visible={visible3}
+                                    onRequestClose={() => setIsVisible3(false)}
                                   />
                                 </View>
                               </View>
@@ -731,24 +717,24 @@ const HomeScreen = ({ navigation }) => {
                               </View>
                               <View style={styles.picview}>
                                 <View style={styles.borderview}>
-                                <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
-                                  <Image style={{
-                                    width: 248,
-                                    height: 198,
-                                  }}
-                                  source={{
-                                    uri: "data:image/png;base64," + photo[3]
-                                  }}
-                                  />
+                                  <TouchableOpacity onPress={() => setIsVisible4(true)} activeOpacity={0.5}>
+                                    <Image style={{
+                                      width: 248,
+                                      height: 198,
+                                    }}
+                                      source={{
+                                        uri: "data:image/png;base64," + photoRef.current[3]
+                                      }}
+                                    />
                                   </TouchableOpacity>
                                   <ImageView
                                     images={[
-                                      {uri: "data:image/png;base64," + photoRef.current[3]}
+                                      { uri: "data:image/png;base64," + photoRef.current[3] }
                                     ]}
                                     presentationStyle="overFullScreen"
                                     imageIndex={0}
-                                    visible={visible}
-                                    onRequestClose={() => setIsVisible(false)}
+                                    visible={visible4}
+                                    onRequestClose={() => setIsVisible4(false)}
                                   />
                                 </View>
                               </View>
@@ -771,27 +757,79 @@ const HomeScreen = ({ navigation }) => {
                               </View>
                               <View style={styles.picview}>
                                 <View style={styles.borderview}>
-                                <TouchableOpacity onPress={()=>setIsVisible(true)} activeOpacity={0.5}>
-                                  <Image style={{
-                                    width: 248,
-                                    height: 198,
-                                  }}
-                                  source={{
-                                    uri: "data:image/png;base64," + photo[4]
-                                  }}
-                                  />
+                                  <TouchableOpacity onPress={() => setIsVisible5(true)} activeOpacity={0.5}>
+                                    <Image style={{
+                                      width: 248,
+                                      height: 198,
+                                    }}
+                                      source={{
+                                        uri: "data:image/png;base64," + photoRef.current[4]
+                                      }}
+                                    />
                                   </TouchableOpacity>
                                   <ImageView
                                     images={[
-                                      {uri: "data:image/png;base64," + photoRef.current[4]}
+                                      { uri: "data:image/png;base64," + photoRef.current[4] }
                                     ]}
                                     presentationStyle="overFullScreen"
                                     imageIndex={0}
-                                    visible={visible}
-                                    onRequestClose={() => setIsVisible(false)}
+                                    visible={visible5}
+                                    onRequestClose={() => setIsVisible5(false)}
                                   />
                                 </View>
                               </View>
+                            </View>
+                            <View style={styles.slide6}>
+                              <Text style={styles.text}>Observaciones</Text>
+                              <View style={{ flexDirection: 'row', marginTop: 15, backgroundColor: 'white' }}>
+                                <TouchableOpacity style={{ marginRight: 10 }} onPress={() => pickImage(5, 'camera')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="camera" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Tomar fotografía</Text>
+                                  </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => pickImage(5, 'gallery')}>
+                                  <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                                    <Fontisto name="photograph" size={20} color="darkgray" />
+                                    <Text style={{ marginLeft: 5, color: 'darkgray' }}>Subir desde galería</Text>
+                                  </View>
+                                </TouchableOpacity>
+                              </View>
+                              <ScrollView style={{ backgroundColor: 'white', width: '100%' }}>
+                                <View style={{ flex: 1, justifyContent: 'center', margin: 10 }}>
+                                  <Text>OBSERVACIONES:</Text>
+                                  <TextInput multiline={true} style={styles.inputs} />
+                                  <Text>Fotos adjuntadas: {auxRef.current.length}</Text>
+                                </View>
+                                <View style={{justifyContent: 'center', alignItems: 'center'}}>
+                                  {/*                                   <ImageView
+                                    images={[
+                                      { uri: "data:image/png;base64," + photoRef.current[4] }
+                                    ]}
+                                    presentationStyle="overFullScreen"
+                                    imageIndex={0}
+                                    visible={visible5}
+                                    onRequestClose={() => setIsVisible5(false)}
+                                  /> */}
+
+                                  {
+                                    auxRef.current.map((item) => {
+                                      return (<View style={styles.borderview, {marginVertical: 10}}>
+
+                                        <Image style={{
+                                          width: 248,
+                                          height: 198,
+                                        }}
+                                          source={{
+                                            uri: "data:image/png;base64," + item
+                                          }}
+                                        />
+
+                                      </View>)
+                                    })
+                                  }
+                                </View>
+                              </ScrollView>
                             </View>
                           </Swiper>
                         </ScrollView>
@@ -897,6 +935,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#71aee0',
+    padding: 10,
+    borderRadius: 20
+  },
+
+  slide6: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#5aadff',
     padding: 10,
     borderRadius: 20
   },
