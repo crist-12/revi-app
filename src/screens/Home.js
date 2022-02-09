@@ -42,12 +42,15 @@ const HomeScreen = ({ navigation }) => {
   const [lengthArr, setLengthArr, lengthArrRef] = useState(0);
   const [photo, setPhoto, photoRef] = useState([]) // Almacena el valor de las fotografías
   const [auxphoto, setAuxPhoto, auxRef] = useState([]) // Almacena el valor de las fotografías opcionales
-  const [ejemplo, setEjemplo, ejemploRef] = useState([]) // 
+  const [obsTanque, setObsTanque] = React.useState(null)
+  const [insertedId, setInsertedId, insertedIdRef] = useState(null)
+
   const [visible1, setIsVisible1] = React.useState(false); // Controla el ImageViewer en la primera imagen
   const [visible2, setIsVisible2] = React.useState(false); // Controla el ImageViewer en la segunda imagen
   const [visible3, setIsVisible3] = React.useState(false); // Controla el ImageViewer en la tercera imagen
   const [visible4, setIsVisible4] = React.useState(false); // Controla el ImageViewer en la cuarta imagen
   const [visible5, setIsVisible5] = React.useState(false); // Controla el ImageViewer en la quinta imagen
+
   let celda;
 
 
@@ -57,7 +60,7 @@ const HomeScreen = ({ navigation }) => {
   const [error, setError] = useState(false) // DEBO CAMBIARLO A TRUE DESPUES
 
 
-// Funcion que obtiene los datos de los usuarios para llenarse en el dropdown
+  // Funcion que obtiene los datos de los usuarios para llenarse en el dropdown
   const getDropDownData = async () => {
     try {
       const response = await fetch("http://192.168.1.134:3000/users");
@@ -90,7 +93,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-// Función que comprueba si la asignación ya existe
+  // Función que comprueba si la asignación ya existe
   const doesAssignmentExist = async () => {
     try {
       const response = await fetch("http://192.168.1.134:3000/vehiculos/" + new URLSearchParams({
@@ -105,7 +108,7 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-// Hook de Efecto para solicitar permiso para acceder a la cámara y a la galería a la aplicación
+  // Hook de Efecto para solicitar permiso para acceder a la cámara y a la galería a la aplicación
   useEffect(() => {
     (async () => {
       if (Platform.OS !== 'web') {
@@ -127,7 +130,7 @@ const HomeScreen = ({ navigation }) => {
     setIsLoading(false)
   }, [])
 
-// Función que almacena los valores seleccionados en el dropdown, recibe un parámetro de tipo string para diferenciar qué es lo que queremos guardar
+  // Función que almacena los valores seleccionados en el dropdown, recibe un parámetro de tipo string para diferenciar qué es lo que queremos guardar
   const handlerItem = async (option, type) => {
     if (type == "driver") {
       setDriver(option);
@@ -258,10 +261,41 @@ const HomeScreen = ({ navigation }) => {
 
   };
 
+  const uploadImages = async (code, type) => {
+    const response = await fetch("http://192.168.1.134:3000/users");
+  }
+
+  const handleSaveAssignment = async () => {
+    const assignment = {
+      CodigoUsuario: driver.key,
+      CodigoVehiculo: selectedVehicle.key,
+      KilometrajeRecibido: kmActual,
+      ProximoCambio: nextValue,
+      TanqueCombustible: valueToggle,
+      ObservacionesTanqueCombustible: obsTanque
+    }
+
+    const response1 = await fetch("http://192.168.1.134:3000/assignment", {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(assignment)
+    })
+
+    const data = await response1.json()
+    setInsertedId(data.insertId)
+  }
+
+  // Ignora los warnings en la consola
   LogBox.ignoreAllLogs();
 
-  return (
+const hola = () => {
+  console.log(respuestasQ[0])
+}
 
+  return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -382,7 +416,11 @@ const HomeScreen = ({ navigation }) => {
                             onSelect={val => setValueToggle(val)}
                           />
                           <Text style={{ marginTop: 15 }}>OBSERVACIONES:</Text>
-                          <TextInput multiline={true} style={styles.inputs} />
+                          <TextInput
+                            multiline={true}
+                            style={styles.inputs}
+                            value={obsTanque}
+                            onChangeText={(val) => setObsTanque(val)} />
                         </View>
                       </View>
                     </ProgressStep>
@@ -801,7 +839,7 @@ const HomeScreen = ({ navigation }) => {
                                   <TextInput multiline={true} style={styles.inputs} />
                                   <Text>Fotos adjuntadas: {auxRef.current.length}</Text>
                                 </View>
-                                <View style={{justifyContent: 'center', alignItems: 'center'}}>
+                                <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                                   {/*                                   <ImageView
                                     images={[
                                       { uri: "data:image/png;base64," + photoRef.current[4] }
@@ -814,7 +852,7 @@ const HomeScreen = ({ navigation }) => {
 
                                   {
                                     auxRef.current.map((item) => {
-                                      return (<View style={styles.borderview, {marginVertical: 10}}>
+                                      return (<View style={styles.borderview, { marginVertical: 10 }}>
 
                                         <Image style={{
                                           width: 248,
@@ -833,6 +871,12 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                           </Swiper>
                         </ScrollView>
+                      </View>
+                    </ProgressStep>
+                    <ProgressStep label="EX" finishBtnText="Finalizar" previousBtnText="Anterior">
+                      <View style={{ flex: 1 }}>
+                        <Button title="Guardar Asignacion" onPress={handleSaveAssignment} />
+                        <Button title="Ver datos" onPress={hola} />
                       </View>
                     </ProgressStep>
                   </ProgressSteps>
