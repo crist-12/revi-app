@@ -50,7 +50,7 @@ const HomeScreen = ({ navigation }) => {
   const [visible3, setIsVisible3] = React.useState(false); // Controla el ImageViewer en la tercera imagen
   const [visible4, setIsVisible4] = React.useState(false); // Controla el ImageViewer en la cuarta imagen
   const [visible5, setIsVisible5] = React.useState(false); // Controla el ImageViewer en la quinta imagen
-
+  let insertedIdValue;
   let celda;
 
 
@@ -210,10 +210,12 @@ const HomeScreen = ({ navigation }) => {
         body: JSON.stringify(photoRef.current)
       }
 
-      const response = await fetch("http://192.168.1.134:3000/saveimages", options);
+      const response = await fetch("http://192.168.1.134:3000/saveimages/" + new URLSearchParams({
+        id: 1
+      }), options);
       const data = await response.json();
       console.log(data);
-      alert("Estoy aqui")
+
     } catch (error) {
       alert(error)
       console.log(error);
@@ -286,14 +288,45 @@ const HomeScreen = ({ navigation }) => {
 
     const data = await response1.json()
     setInsertedId(data.insertId)
+    insertedIdValue = data.insertId;
   }
 
   // Ignora los warnings en la consola
   LogBox.ignoreAllLogs();
 
-const hola = () => {
-  console.log(respuestasQ[0])
-}
+  const handleSaveAssignmentDetails = async () => {
+    //console.log(respuestasQ[0][0])
+    respuestasQ.forEach((item, index) => {
+      item.forEach((respuesta, indice) => {
+        let obj = {
+          "IdAsignacion": insertedId,
+          "CodigoGrupoRecurso": respuesta.CodigoGrupoRecurso,
+          "CodigoOpcionRecurso": respuesta.CodigoOpcionRecurso,
+          "Respuesta": respuesta.Respuesta
+        }
+
+        fetch("http://192.168.1.134:3000/details", {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(obj)
+        }).then((res) => {
+          console.log("Detalle insertado exitosamente")
+        }).catch((err) => {
+          console.log(err)
+        })
+
+        console.log(obj)
+      })
+      // const data = await response1.json()
+    })
+  }
+
+  const handleSaveAssignmentImages = () => {
+
+  }
 
   return (
     <KeyboardAvoidingView
@@ -876,7 +909,8 @@ const hola = () => {
                     <ProgressStep label="EX" finishBtnText="Finalizar" previousBtnText="Anterior">
                       <View style={{ flex: 1 }}>
                         <Button title="Guardar Asignacion" onPress={handleSaveAssignment} />
-                        <Button title="Ver datos" onPress={hola} />
+                        <Button title="Guardar detalles" onPress={handleSaveAssignmentDetails} />
+                        <Button title="Guardar" onPress={handleUploadPhoto} />
                       </View>
                     </ProgressStep>
                   </ProgressSteps>
