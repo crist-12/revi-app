@@ -23,7 +23,28 @@ import * as ImagePicker from 'expo-image-picker'
 import Swiper from 'react-native-swiper'
 import Fontisto from 'react-native-vector-icons/Fontisto'
 import ImageView from "react-native-image-viewing";
+import AnimatedLoader from "react-native-animated-loader";
+import * as BackgroundFetch from 'expo-background-fetch';
+import * as TaskManager from 'expo-task-manager';
 
+const BACKGROUND_FETCH_TASK = 'background-fetch';
+
+TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+  console.log("Estoy en la tarea programada :)")
+  return BackgroundFetch.BackgroundFetchResult.NewData;
+})
+
+const registerBackgroundFetchAsync = async () => {
+  return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+    minimumInterval: 1,
+    stopOnTerminate: true,
+    startOnBoot: false
+  })
+}
+
+const unregisterBackgroundFetchAsync = async () => {
+  return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+}
 
 const HomeScreen = ({ navigation }) => {
 
@@ -42,8 +63,11 @@ const HomeScreen = ({ navigation }) => {
   const [lengthArr, setLengthArr, lengthArrRef] = useState(0);
   const [photo, setPhoto, photoRef] = useState([]) // Almacena el valor de las fotografías
   const [auxphoto, setAuxPhoto, auxRef] = useState([]) // Almacena el valor de las fotografías opcionales
-  const [obsTanque, setObsTanque] = React.useState(null)
-  const [insertedId, setInsertedId, insertedIdRef] = useState(null)
+  const [obsTanque, setObsTanque] = React.useState(null) // Almacena el valor del input sobre las observaciones del tanque de gasolina
+  const [insertedId, setInsertedId, insertedIdRef] = useState(null) // Almacena el id insertado en la base de datos de la tabla maestra
+  const [loader, setLoader] = React.useState(false) // Controla la visibilidad del loader
+  const [isRegistered, setIsRegistered] = React.useState(false);
+  const [status, setStatus] = React.useState(null);
 
   const [visible1, setIsVisible1] = React.useState(false); // Controla el ImageViewer en la primera imagen
   const [visible2, setIsVisible2] = React.useState(false); // Controla el ImageViewer en la segunda imagen
@@ -57,7 +81,7 @@ const HomeScreen = ({ navigation }) => {
 
   var flag = false;
 
-  const [error, setError] = useState(false) // DEBO CAMBIARLO A TRUE DESPUES
+  const [error, setError] = useState(true) // DEBO CAMBIARLO A TRUE DESPUES
 
 
   // Funcion que obtiene los datos de los usuarios para llenarse en el dropdown
@@ -130,6 +154,27 @@ const HomeScreen = ({ navigation }) => {
     setIsLoading(false)
   }, [])
 
+  useEffect(() => {
+    checkStatusAsync();
+  }, []);
+
+  const checkStatusAsync = async () => {
+    const status = await BackgroundFetch.getStatusAsync();
+    const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
+    setStatus(status);
+    setIsRegistered(isRegistered);
+  };
+
+  const toggleFetchTask = async () => {
+    if (isRegistered) {
+      await unregisterBackgroundFetchAsync();
+    } else {
+      await registerBackgroundFetchAsync();
+    }
+
+    checkStatusAsync();
+  };
+
   // Función que almacena los valores seleccionados en el dropdown, recibe un parámetro de tipo string para diferenciar qué es lo que queremos guardar
   const handlerItem = async (option, type) => {
     if (type == "driver") {
@@ -176,7 +221,9 @@ const HomeScreen = ({ navigation }) => {
       setInterLength(tamArray);
     })
 
-    if (respuestasRefQ.current.length < interLengthRef.current) {
+    console.log("Todo -" + interLengthRef.current)
+    console.log("INT -" + respuestasQ[0].length)
+    if (respuestasQ[0].length != interLengthRef.current) {
       setError(true)
       return alert("Asegúrate de haber calificado todos los ítems antes de continuar")
     } else {
@@ -187,13 +234,29 @@ const HomeScreen = ({ navigation }) => {
   // Validar si el STEP 4 - REVISIÓN EXTERIORES Y MOTOR se han elegido todos los items
   const handleStepEXTMTR = () => {
     var tamArray = 0;
+    var totalRes = 0;
     groupOptionsRef.current.filter(x => x.IdGrupoRecurso == "ASI_DET_EXTERIOR" || x.IdGrupoRecurso == "ASI_DET_MOTOR" || x.IdGrupoRecurso == "ASI_DET_INTERIOR").map(item => {
-      tamArray = item.opciones.length;
+      tamArray += item.opciones.length
     })
 
-    if (respuestasRefQ.current.length != tamArray) {
+    console.log(tamArray)
+    respuestasQ.forEach((item) => {
+      totalRes += item.length;
+    })
+    console.log(totalRes)
+
+    if (totalRes != tamArray) {
       setError(true)
       return alert("Asegúrate de haber calificado todos los ítems antes de continuar")
+    } else {
+      setError(false)
+    }
+  }
+
+  const handleStepOBS = () => {
+    if (photo.length < 5) {
+      setError(true)
+      return alert("Debes adjuntar las fotografías antes de proceder")
     } else {
       setError(false)
     }
@@ -263,9 +326,6 @@ const HomeScreen = ({ navigation }) => {
 
   };
 
-  const uploadImages = async (code, type) => {
-    const response = await fetch("http://192.168.1.134:3000/users");
-  }
 
   const handleSaveAssignment = async () => {
     const assignment = {
@@ -296,36 +356,44 @@ const HomeScreen = ({ navigation }) => {
 
   const handleSaveAssignmentDetails = async () => {
     //console.log(respuestasQ[0][0])
-    respuestasQ.forEach((item, index) => {
-      item.forEach((respuesta, indice) => {
-        let obj = {
-          "IdAsignacion": insertedId,
-          "CodigoGrupoRecurso": respuesta.CodigoGrupoRecurso,
-          "CodigoOpcionRecurso": respuesta.CodigoOpcionRecurso,
-          "Respuesta": respuesta.Respuesta
-        }
+    try {
+      respuestasQ.forEach((item, index) => {
+        item.forEach((respuesta, indice) => {
+          let obj = {
+            "IdAsignacion": insertedId,
+            "CodigoGrupoRecurso": respuesta.CodigoGrupoRecurso,
+            "CodigoOpcionRecurso": respuesta.CodigoOpcionRecurso,
+            "Respuesta": respuesta.Respuesta
+          }
 
-        fetch("http://192.168.1.134:3000/details", {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(obj)
-        }).then((res) => {
-          console.log("Detalle insertado exitosamente")
-        }).catch((err) => {
-          console.log(err)
+          fetch("http://192.168.1.134:3000/details", {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(obj)
+          }).then((res) => {
+            console.log("Detalle insertado exitosamente")
+          }).catch((err) => {
+            console.log(err)
+          })
+
+          console.log(obj)
         })
-
-        console.log(obj)
+        // const data = await response1.json()
       })
-      // const data = await response1.json()
-    })
+    } catch (error) {
+      alert(error)
+    }
   }
 
-  const handleSaveAssignmentImages = () => {
-
+  const handleSaveAllAsignments = async () => {
+    setLoader(true)
+    await handleSaveAssignment();
+    await handleSaveAssignmentDetails();
+    await handleUploadPhoto();
+    setLoader(false)
   }
 
   return (
@@ -351,7 +419,7 @@ const HomeScreen = ({ navigation }) => {
               <View style={styles.body}>
                 <View style={{ marginLeft: 20, marginRight: 20, flex: 1 }}>
                   <ProgressSteps>
-                    <ProgressStep label="DG" errors={error} /*onNext = {handleStepDG}*/ nextBtnText="Siguiente">
+                    <ProgressStep label="DG" errors={error} onNext={handleStepDG} nextBtnText="Siguiente">
                       <View style={styles.picker}>
                         <Text style={{ marginBottom: 5 }}>Seleccione un conductor: </Text>
 
@@ -418,11 +486,20 @@ const HomeScreen = ({ navigation }) => {
                               </> :
                               <Text>No hay datos disponibles</Text>
                           }
-
+                          <Text>
+                            {status && BackgroundFetch.BackgroundFetchStatus[status]}
+                          </Text>
+                          <Text>
+                            {isRegistered ? BACKGROUND_FETCH_TASK : 'Not registered yet!'}
+                          </Text>
+                          <Button
+                            title={isRegistered ? 'Unregister BackgroundFetch task' : 'Register BackgroundFetch task'}
+                            onPress={toggleFetchTask}
+                          />
                         </View>
                       </View>
                     </ProgressStep>
-                    <ProgressStep label="EG" nextBtnText="Siguiente" previousBtnText="Anterior" /*onNext={handleStepEG}*/ errors={error}>
+                    <ProgressStep label="EG" nextBtnText="Siguiente" previousBtnText="Anterior" onNext={handleStepEG} errors={error}>
                       <View>
                         <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: 15 }}>ESTADO GENERAL DEL VEHÍCULO</Text>
                         <View>
@@ -436,6 +513,7 @@ const HomeScreen = ({ navigation }) => {
                           <TextInput
                             placeholder='Kilometraje actual'
                             value={kmActual}
+                            keyboardType='numeric'
                             onChangeText={(val) => setKmActual(val)}
                             style={styles.inputs} />
                           <Text style={{ marginBottom: 10 }}>ESTADO DEL TANQUE DE COMBUSTIBLE:</Text>
@@ -457,7 +535,7 @@ const HomeScreen = ({ navigation }) => {
                         </View>
                       </View>
                     </ProgressStep>
-                    <ProgressStep label="INT" /*onNext = {handleStepINT}*/ nextBtnText="Siguiente" previousBtnText="Anterior" errors={error}>
+                    <ProgressStep label="INT" onNext={handleStepINT} nextBtnText="Siguiente" previousBtnText="Anterior" errors={error}>
                       <ScrollView>
                         <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: 15 }}>DETALLES DEL VEHÍCULO</Text>
                         {
@@ -520,7 +598,7 @@ const HomeScreen = ({ navigation }) => {
 
                       </ScrollView>
                     </ProgressStep>
-                    <ProgressStep label="EXT/MTR" nextBtnText="Siguiente" previousBtnText="Anterior" /*onNext={handleStepEXTMTR}*/ errors={false}>
+                    <ProgressStep label="EXT/MTR" nextBtnText="Siguiente" previousBtnText="Anterior" onNext={handleStepEXTMTR} errors={error}>
                       <ScrollView>
                         <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: 15 }}>DETALLES DEL VEHÍCULO</Text>
                         {
@@ -565,7 +643,6 @@ const HomeScreen = ({ navigation }) => {
 
                                               newArray[1][index] = obj;
                                               setRespuestasQ(newArray)
-                                              console.log(respuestasRefQ.current)
                                             }}
 
                                           />
@@ -624,7 +701,6 @@ const HomeScreen = ({ navigation }) => {
 
                                               newArray[2][index] = obj;
                                               setRespuestasQ(newArray)
-                                              console.log(respuestasRefQ.current)
                                             }}
 
                                           />
@@ -643,7 +719,7 @@ const HomeScreen = ({ navigation }) => {
 
                       </ScrollView>
                     </ProgressStep>
-                    <ProgressStep label="OBS" finishBtnText="Finalizar" previousBtnText="Anterior">
+                    <ProgressStep label="OBS" nextBtnText="Siguiente" previousBtnText="Anterior" onNext={handleStepOBS} errors={error}>
                       <View style={{ flex: 1 }}>
                         {/* 
               <Button title="Choose Photo" onPress={pickImage} />
@@ -908,9 +984,19 @@ const HomeScreen = ({ navigation }) => {
                     </ProgressStep>
                     <ProgressStep label="EX" finishBtnText="Finalizar" previousBtnText="Anterior">
                       <View style={{ flex: 1 }}>
+                        <AnimatedLoader
+                          visible={loader}
+                          overlayColor="rgba(255,255,255,0.75)"
+                          source={require("../animation/loader.json")}
+                          animationStyle={{ width: 300, height: 300 }}
+                          speed={1}
+                        >
+                          <Text>Enviando respuestas...</Text>
+                        </AnimatedLoader>
                         <Button title="Guardar Asignacion" onPress={handleSaveAssignment} />
                         <Button title="Guardar detalles" onPress={handleSaveAssignmentDetails} />
                         <Button title="Guardar" onPress={handleUploadPhoto} />
+                        <Button title="Guardar asignación :)" onPress={handleSaveAllAsignments} />
                       </View>
                     </ProgressStep>
                   </ProgressSteps>
