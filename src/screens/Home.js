@@ -26,27 +26,33 @@ import ImageView from "react-native-image-viewing";
 import AnimatedLoader from "react-native-animated-loader";
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
+import { useNetInfo } from "@react-native-community/netinfo";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BACKGROUND_FETCH_TASK = 'background-fetch';
 
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
-  console.log("Estoy en la tarea programada :)")
+  //await handleSaveAllAsignments()
+  console.log("Tarea en background :)")
   return BackgroundFetch.BackgroundFetchResult.NewData;
 })
 
-const registerBackgroundFetchAsync = async () => {
-  return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-    minimumInterval: 1,
-    stopOnTerminate: true,
-    startOnBoot: false
-  })
-}
-
-const unregisterBackgroundFetchAsync = async () => {
-  return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
-}
 
 const HomeScreen = ({ navigation }) => {
+
+  const registerBackgroundFetchAsync = async () => {
+    return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+      minimumInterval: 1,
+      stopOnTerminate: true,
+      startOnBoot: false
+    })
+  }
+
+  const unregisterBackgroundFetchAsync = async () => {
+    return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+  }
+
+  const netInfo = useNetInfo();
 
   const [users, setUsers] = React.useState([]); // Carga todos los conductores
   const [valueToggle, setValueToggle] = React.useState(); // Almacena el valor del valor del tanque de combustible
@@ -68,6 +74,7 @@ const HomeScreen = ({ navigation }) => {
   const [loader, setLoader] = React.useState(false) // Controla la visibilidad del loader
   const [isRegistered, setIsRegistered] = React.useState(false);
   const [status, setStatus] = React.useState(null);
+  const [message, setMessage, messageRef] = useState("Enviando petición...");
 
   const [visible1, setIsVisible1] = React.useState(false); // Controla el ImageViewer en la primera imagen
   const [visible2, setIsVisible2] = React.useState(false); // Controla el ImageViewer en la segunda imagen
@@ -328,27 +335,32 @@ const HomeScreen = ({ navigation }) => {
 
 
   const handleSaveAssignment = async () => {
-    const assignment = {
-      CodigoUsuario: driver.key,
-      CodigoVehiculo: selectedVehicle.key,
-      KilometrajeRecibido: kmActual,
-      ProximoCambio: nextValue,
-      TanqueCombustible: valueToggle,
-      ObservacionesTanqueCombustible: obsTanque
+    try {
+      const assignment = {
+        CodigoUsuario: driver.key,
+        CodigoVehiculo: selectedVehicle.key,
+        KilometrajeRecibido: kmActual,
+        ProximoCambio: nextValue,
+        TanqueCombustible: valueToggle,
+        ObservacionesTanqueCombustible: obsTanque
+      }
+
+      const response1 = await fetch("http://192.168.1.134:3000/assignment", {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(assignment)
+      })
+
+      const data = await response1.json()
+      setInsertedId(data.insertId)
+      insertedIdValue = data.insertId;
+    } catch (error) {
+      console.log(error)
     }
 
-    const response1 = await fetch("http://192.168.1.134:3000/assignment", {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(assignment)
-    })
-
-    const data = await response1.json()
-    setInsertedId(data.insertId)
-    insertedIdValue = data.insertId;
   }
 
   // Ignora los warnings en la consola
@@ -390,10 +402,71 @@ const HomeScreen = ({ navigation }) => {
 
   const handleSaveAllAsignments = async () => {
     setLoader(true)
-    await handleSaveAssignment();
-    await handleSaveAssignmentDetails();
-    await handleUploadPhoto();
-    setLoader(false)
+    if (netInfo.isConnected) {
+      await handleSaveAssignment();
+      await handleSaveAssignmentDetails();
+      await handleUploadPhoto();
+      setLoader(false)
+    } else {
+      
+    }
+  }
+
+  const saveStorageItem = async() => {
+    const assignment = {
+      CodigoUsuario: driver.key,
+      CodigoVehiculo: selectedVehicle.key,
+      KilometrajeRecibido: kmActual,
+      ProximoCambio: nextValue,
+      TanqueCombustible: valueToggle,
+      ObservacionesTanqueCombustible: obsTanque
+    }
+    try {
+      await AsyncStorage.setItem('assignment', assignment)
+    } catch (error) {
+      console.log(error)
+    }
+
+    try {
+      await AsyncStorage.setItem('response', respuestasQ)
+    } catch (error) {
+      console.log(error)
+    }
+
+    try {
+      await AsyncStorage.setItem('photos', photo)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const getStorageItems = () => {
+    try {
+      const assiValue = await AsyncStorage.getItem('assignment')
+      if(value !== null) {
+        // value previously stored
+      }
+    } catch(e) {
+      // error reading value
+    }
+
+    try {
+      const respValue = await AsyncStorage.getItem('response')
+      if(value !== null) {
+        // value previously stored
+      }
+    } catch(e) {
+      // error reading value
+    }
+
+    try {
+      const photoValue = await AsyncStorage.getItem('photos')
+      if(value !== null) {
+        // value previously stored
+      }
+    } catch(e) {
+      // error reading value
+    }
   }
 
   return (
@@ -492,10 +565,7 @@ const HomeScreen = ({ navigation }) => {
                           <Text>
                             {isRegistered ? BACKGROUND_FETCH_TASK : 'Not registered yet!'}
                           </Text>
-                          <Button
-                            title={isRegistered ? 'Unregister BackgroundFetch task' : 'Register BackgroundFetch task'}
-                            onPress={toggleFetchTask}
-                          />
+                          <Button title="Hola" onPress={toggleFetchTask} />
                         </View>
                       </View>
                     </ProgressStep>
@@ -991,12 +1061,18 @@ const HomeScreen = ({ navigation }) => {
                           animationStyle={{ width: 300, height: 300 }}
                           speed={1}
                         >
-                          <Text>Enviando respuestas...</Text>
+                          <Text>{messageRef.current}</Text>
                         </AnimatedLoader>
-                        <Button title="Guardar Asignacion" onPress={handleSaveAssignment} />
-                        <Button title="Guardar detalles" onPress={handleSaveAssignmentDetails} />
-                        <Button title="Guardar" onPress={handleUploadPhoto} />
-                        <Button title="Guardar asignación :)" onPress={handleSaveAllAsignments} />
+                        <TouchableOpacity style={{ width: '100%', height: 50, backgroundColor: 'lightgray' }} onPress={{ handleSaveAllAsignments }}>
+                          <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                            <Fontisto
+                              name='save'
+                              size={20}
+                              color="white"
+                            />
+                            <Text style={{ marginLeft: 5, color: 'darkgray' }}>Guardar asignación</Text>
+                          </View>
+                        </TouchableOpacity>
                       </View>
                     </ProgressStep>
                   </ProgressSteps>
