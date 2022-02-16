@@ -3,7 +3,6 @@ import React, { useEffect } from 'react';
 import {
   StyleSheet,
   Text,
-  Button,
   View,
   StatusBar,
   TextInput,
@@ -13,7 +12,6 @@ import {
   LogBox,
   Image,
   TouchableOpacity,
-  Modal
 } from 'react-native';
 import { ProgressStep, ProgressSteps } from 'react-native-progress-steps';
 import ModalSelector from 'react-native-modal-selector-searchable'
@@ -24,33 +22,9 @@ import Swiper from 'react-native-swiper'
 import Fontisto from 'react-native-vector-icons/Fontisto'
 import ImageView from "react-native-image-viewing";
 import AnimatedLoader from "react-native-animated-loader";
-import * as BackgroundFetch from 'expo-background-fetch';
-import * as TaskManager from 'expo-task-manager';
 import { useNetInfo } from "@react-native-community/netinfo";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const BACKGROUND_FETCH_TASK = 'background-fetch';
-
-TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
-  //await handleSaveAllAsignments()
-  console.log("Tarea en background :)")
-  return BackgroundFetch.BackgroundFetchResult.NewData;
-})
-
 
 const HomeScreen = ({ navigation }) => {
-
-  const registerBackgroundFetchAsync = async () => {
-    return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-      minimumInterval: 1,
-      stopOnTerminate: true,
-      startOnBoot: false
-    })
-  }
-
-  const unregisterBackgroundFetchAsync = async () => {
-    return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
-  }
 
   const netInfo = useNetInfo();
 
@@ -76,6 +50,7 @@ const HomeScreen = ({ navigation }) => {
   const [status, setStatus] = React.useState(null);
   const [message, setMessage, messageRef] = useState("Enviando petición...");
 
+
   const [visible1, setIsVisible1] = React.useState(false); // Controla el ImageViewer en la primera imagen
   const [visible2, setIsVisible2] = React.useState(false); // Controla el ImageViewer en la segunda imagen
   const [visible3, setIsVisible3] = React.useState(false); // Controla el ImageViewer en la tercera imagen
@@ -94,7 +69,7 @@ const HomeScreen = ({ navigation }) => {
   // Funcion que obtiene los datos de los usuarios para llenarse en el dropdown
   const getDropDownData = async () => {
     try {
-      const response = await fetch("http://192.168.1.134:3000/users");
+      const response = await fetch("http://space.rveloz.com/revi/users");
       const data = await response.json();
       setUsers(data);
     } catch (error) {
@@ -105,7 +80,7 @@ const HomeScreen = ({ navigation }) => {
   // Función que obtiene los datos de todos los vehículos
   const getAllVehicles = async () => {
     try {
-      const response = await fetch("http://192.168.1.134:3000/vehiculos");
+      const response = await fetch("http://space.rveloz.com/revi/vehiculos");
       const data = await response.json();
       setVehicle(data);
     } catch (error) {
@@ -116,7 +91,7 @@ const HomeScreen = ({ navigation }) => {
   // Función que obtiene un objeto con todos los grupos y opciones a evaluar
   const getGroupAndOptions = async () => {
     try {
-      const response = await fetch("http://192.168.1.134:3000/groups");
+      const response = await fetch("http://space.rveloz.com/revi/groups");
       const data = await response.json();
       setGroupsOptions(data);
     } catch (error) {
@@ -127,7 +102,7 @@ const HomeScreen = ({ navigation }) => {
   // Función que comprueba si la asignación ya existe
   const doesAssignmentExist = async () => {
     try {
-      const response = await fetch("http://192.168.1.134:3000/vehiculos/" + new URLSearchParams({
+      const response = await fetch("http://space.rveloz.com/revi/vehiculos/" + new URLSearchParams({
         userId: driver.key,
         vehCode: selectedVehicle.key
       }));
@@ -161,26 +136,6 @@ const HomeScreen = ({ navigation }) => {
     setIsLoading(false)
   }, [])
 
-  useEffect(() => {
-    checkStatusAsync();
-  }, []);
-
-  const checkStatusAsync = async () => {
-    const status = await BackgroundFetch.getStatusAsync();
-    const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
-    setStatus(status);
-    setIsRegistered(isRegistered);
-  };
-
-  const toggleFetchTask = async () => {
-    if (isRegistered) {
-      await unregisterBackgroundFetchAsync();
-    } else {
-      await registerBackgroundFetchAsync();
-    }
-
-    checkStatusAsync();
-  };
 
   // Función que almacena los valores seleccionados en el dropdown, recibe un parámetro de tipo string para diferenciar qué es lo que queremos guardar
   const handlerItem = async (option, type) => {
@@ -210,7 +165,7 @@ const HomeScreen = ({ navigation }) => {
 
   // Validar si el STEP 2 - ESTADO GENERAL cumple con las validaciones y nos permite proseguir a la siguiente página
   const handleStepEG = async () => {
-    if (kmActual && nextValue) {
+    if (kmActual && nextValue && valueToggle) {
       setError(false);
     } else {
       setError(true)
@@ -279,9 +234,8 @@ const HomeScreen = ({ navigation }) => {
         },
         body: JSON.stringify(photoRef.current)
       }
-
-      const response = await fetch("http://192.168.1.134:3000/saveimages/" + new URLSearchParams({
-        id: 1
+      const response = await fetch("http://space.rveloz.com/revi/saveimages/" + new URLSearchParams({
+        id: insertedIdRef.current
       }), options);
       const data = await response.json();
       console.log(data);
@@ -345,7 +299,7 @@ const HomeScreen = ({ navigation }) => {
         ObservacionesTanqueCombustible: obsTanque
       }
 
-      const response1 = await fetch("http://192.168.1.134:3000/assignment", {
+      const response1 = await fetch("http://space.rveloz.com/revi/assignment", {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -372,13 +326,13 @@ const HomeScreen = ({ navigation }) => {
       respuestasQ.forEach((item, index) => {
         item.forEach((respuesta, indice) => {
           let obj = {
-            "IdAsignacion": insertedId,
+            "IdAsignacion": insertedIdRef.current,
             "CodigoGrupoRecurso": respuesta.CodigoGrupoRecurso,
             "CodigoOpcionRecurso": respuesta.CodigoOpcionRecurso,
             "Respuesta": respuesta.Respuesta
           }
 
-          fetch("http://192.168.1.134:3000/details", {
+          fetch("http://space.rveloz.com/revi/details", {
             method: 'POST',
             headers: {
               Accept: 'application/json',
@@ -403,69 +357,29 @@ const HomeScreen = ({ navigation }) => {
   const handleSaveAllAsignments = async () => {
     setLoader(true)
     if (netInfo.isConnected) {
+      setMessage("Guardando asignación...")
       await handleSaveAssignment();
+      setMessage("Guardando las respuestas...")
       await handleSaveAssignmentDetails();
+      setMessage("Subiendo fotografías...")
       await handleUploadPhoto();
+      setMessage("¡Listo!")
+      alert("Asignación realizada exitosamente")
       setLoader(false)
+      setIsLoading(true)
+      setDriver([])
+      setSelectedVehicle([])
+      setNextValue("")
+      setKmActual("")
+      setRespuestasQ([[], [], []])
+      setAuxPhoto([])
+      setPhoto([])
+      setObsTanque("")
+      setValueToggle()
+      setQuantityRows()
+      setIsLoading(false)
     } else {
-      
-    }
-  }
-
-  const saveStorageItem = async() => {
-    const assignment = {
-      CodigoUsuario: driver.key,
-      CodigoVehiculo: selectedVehicle.key,
-      KilometrajeRecibido: kmActual,
-      ProximoCambio: nextValue,
-      TanqueCombustible: valueToggle,
-      ObservacionesTanqueCombustible: obsTanque
-    }
-    try {
-      await AsyncStorage.setItem('assignment', assignment)
-    } catch (error) {
-      console.log(error)
-    }
-
-    try {
-      await AsyncStorage.setItem('response', respuestasQ)
-    } catch (error) {
-      console.log(error)
-    }
-
-    try {
-      await AsyncStorage.setItem('photos', photo)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  const getStorageItems = () => {
-    try {
-      const assiValue = await AsyncStorage.getItem('assignment')
-      if(value !== null) {
-        // value previously stored
-      }
-    } catch(e) {
-      // error reading value
-    }
-
-    try {
-      const respValue = await AsyncStorage.getItem('response')
-      if(value !== null) {
-        // value previously stored
-      }
-    } catch(e) {
-      // error reading value
-    }
-
-    try {
-      const photoValue = await AsyncStorage.getItem('photos')
-      if(value !== null) {
-        // value previously stored
-      }
-    } catch(e) {
-      // error reading value
+      alert("Necesitas conexión a internet para guardar tu asignación")
     }
   }
 
@@ -492,7 +406,7 @@ const HomeScreen = ({ navigation }) => {
               <View style={styles.body}>
                 <View style={{ marginLeft: 20, marginRight: 20, flex: 1 }}>
                   <ProgressSteps>
-                    <ProgressStep label="DG" errors={error} onNext={handleStepDG} nextBtnText="Siguiente">
+                    <ProgressStep label="DG" nextBtnText="Siguiente" onNext={handleStepDG} errors={error}>
                       <View style={styles.picker}>
                         <Text style={{ marginBottom: 5 }}>Seleccione un conductor: </Text>
 
@@ -512,7 +426,7 @@ const HomeScreen = ({ navigation }) => {
                             style={{ borderWidth: 1, borderColor: '#ccc', padding: 10, height: 40 }}
                             editable={false}
                             placeholder="Selecciona un conductor"
-                            value={driver.label} />
+                            value={driver.label ?? ""} />
                         </ModalSelector>
 
                         <Text style={{ marginTop: 10, marginBottom: 5 }}>Seleccione el carro a asignar</Text>
@@ -532,7 +446,7 @@ const HomeScreen = ({ navigation }) => {
                             style={{ borderWidth: 1, borderColor: '#ccc', padding: 10, height: 40 }}
                             editable={false}
                             placeholder="Selecciona un vehículo"
-                            value={selectedVehicle.label} />
+                            value={selectedVehicle.label ?? ""} />
                         </ModalSelector>
                         <View style={styles.data}>
                           <Text style={{ textAlign: 'center', fontWeight: 'bold' }}>DATOS GENERALES</Text>
@@ -541,8 +455,8 @@ const HomeScreen = ({ navigation }) => {
                             driver.key ?
                               <>
 
-                                <Text>NOMBRE: {driver.label}</Text>
-                                <Text>SUCURSAL: {driver.NombreUbicacion}</Text>
+                                <Text>NOMBRE: {driver.label ?? ""}</Text>
+                                <Text>SUCURSAL: {driver.NombreUbicacion ?? ""}</Text>
                               </> :
                               <Text>No hay datos disponibles</Text>
                           }
@@ -551,21 +465,14 @@ const HomeScreen = ({ navigation }) => {
                           {
                             selectedVehicle.key ?
                               <>
-                                <Text>PLACA: {selectedVehicle.label}</Text>
-                                <Text>MODELO: {selectedVehicle.VehMarca} {selectedVehicle.VehModelo}</Text>
-                                <Text>AÑO: {selectedVehicle.VehAno}</Text>
+                                <Text>PLACA: {selectedVehicle.label ?? ""}</Text>
+                                <Text>MODELO: {selectedVehicle.VehMarca} {selectedVehicle.VehModelo ?? ""}</Text>
+                                <Text>AÑO: {selectedVehicle.VehAno ?? ""}</Text>
                                 <Text>TIPO DE COMBUSTIBLE: {selectedVehicle.VehTipoCombustible ?? ""}</Text>
-                                <Text>KILOMETRAJE: {selectedVehicle.VehKilometraje}</Text>
+                                <Text>KILOMETRAJE: {selectedVehicle.VehKilometraje ?? ""}</Text>
                               </> :
                               <Text>No hay datos disponibles</Text>
                           }
-                          <Text>
-                            {status && BackgroundFetch.BackgroundFetchStatus[status]}
-                          </Text>
-                          <Text>
-                            {isRegistered ? BACKGROUND_FETCH_TASK : 'Not registered yet!'}
-                          </Text>
-                          <Button title="Hola" onPress={toggleFetchTask} />
                         </View>
                       </View>
                     </ProgressStep>
@@ -605,7 +512,7 @@ const HomeScreen = ({ navigation }) => {
                         </View>
                       </View>
                     </ProgressStep>
-                    <ProgressStep label="INT" onNext={handleStepINT} nextBtnText="Siguiente" previousBtnText="Anterior" errors={error}>
+                    <ProgressStep label="INT" nextBtnText="Siguiente" previousBtnText="Anterior" onNext={handleStepINT} errors={error}>
                       <ScrollView>
                         <Text style={{ textAlign: 'center', fontWeight: 'bold', marginBottom: 15 }}>DETALLES DEL VEHÍCULO</Text>
                         {
@@ -1054,6 +961,21 @@ const HomeScreen = ({ navigation }) => {
                     </ProgressStep>
                     <ProgressStep label="EX" finishBtnText="Finalizar" previousBtnText="Anterior">
                       <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', padding: 10, alignItems: 'center', justifyContent: 'flex-end', marginBottom: 10}}>
+                        {
+                          netInfo.isConnected ?
+                            <>
+                              <View style={{ width: 15, height: 15, backgroundColor: 'green', borderRadius: 15, marginRight: 10 }} />
+                              <Text>Conectado</Text>
+                            </>
+                            :
+                            <>
+                              <View style={{ width: 15, height: 15, backgroundColor: 'red', borderRadius: 15, marginRight: 10 }} />
+                              <Text>Sin conexión</Text>
+                            </>
+                        }
+
+                      </View>
                         <AnimatedLoader
                           visible={loader}
                           overlayColor="rgba(255,255,255,0.75)"
@@ -1063,14 +985,14 @@ const HomeScreen = ({ navigation }) => {
                         >
                           <Text>{messageRef.current}</Text>
                         </AnimatedLoader>
-                        <TouchableOpacity style={{ width: '100%', height: 50, backgroundColor: 'lightgray' }} onPress={{ handleSaveAllAsignments }}>
-                          <View style={{ flexDirection: 'row', padding: 10, backgroundColor: 'white', borderRadius: 0 }}>
+                        <TouchableOpacity style={{ width: '100%', height: 50, backgroundColor: '#00bef0', alignItems: 'center', justifyContent: 'center', borderRadius: 10 }} onPress={handleSaveAllAsignments}>
+                          <View style={{ flexDirection: 'row', padding: 10, borderRadius: 0 }}>
                             <Fontisto
                               name='save'
                               size={20}
                               color="white"
                             />
-                            <Text style={{ marginLeft: 5, color: 'darkgray' }}>Guardar asignación</Text>
+                            <Text style={{ marginLeft: 10, color: 'white', fontWeight: 'bold' }}>Guardar asignación</Text>
                           </View>
                         </TouchableOpacity>
                       </View>
